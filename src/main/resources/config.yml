@@ -1,0 +1,160 @@
+# GhastUtils Configuration
+# Version 2.0.0
+
+# Logging settings
+logging:
+  debug-enabled: false
+  file-logging-enabled: false
+  directory: logs
+
+# Multiplier settings
+multiplier:
+  global: 1.0
+  min: 1.0
+  multiply_effects: false
+  add_effects: true
+
+  # Event templates for easy event creation
+  event-templates:
+    mine:
+      name: "Mining Boost"
+      value: 0.5
+      duration: 3600
+    farm:
+      name: "Farming Boost"
+      value: 0.75
+      duration: 7200
+    weekend:
+      name: "Weekend Bonus"
+      value: 1.0
+      duration: 172800
+    special:
+      name: "Special Event"
+      value: 2.0
+      duration: 3600
+
+# Armor multiplier settings
+armor-multipliers:
+  enabled: true
+  particles:
+    enabled: true
+    type: WITCH
+    count: 15
+    radius: 0.5
+
+  # Define armor pieces here
+  pieces:
+    # Example diamond helmet with 0.1 (10%) multiplier
+    diamond_helmet:
+      material: DIAMOND_HELMET
+      name: "&bDiamond Helmet"
+      lore:
+        - "&7A powerful helmet that"
+        - "&7increases your multiplier by &b10%"
+      multiplier: 0.1
+
+    # Example custom armor piece
+    miner_helmet:
+      material: GOLDEN_HELMET
+      name: "&6Miner's Helmet"
+      lore:
+        - "&7Increases your multiplier by &620%"
+        - "&7Perfect for mining adventures"
+      multiplier: 0.2
+      custom-model-data: 1001
+      permission: ghastutils.armor.miner
+
+    # Example custom head
+    crown:
+      material: PLAYER_HEAD
+      name: "&eRoyal Crown"
+      lore:
+        - "&7A crown fit for royalty"
+        - "&7Increases your multiplier by &e30%"
+      multiplier: 0.3
+      head-texture: "http://textures.minecraft.net/texture/83e8176a87d9a8fccde348b94def9f7b4318dec79668790503e06ed3464e3d6d"
+      permission: ghastutils.armor.crown
+
+    # Example netherite armor piece
+    netherite_chestplate:
+      material: NETHERITE_CHESTPLATE
+      name: "&8Netherite Chestplate"
+      lore:
+        - "&7Increases your multiplier by &825%"
+        - "&7Forged from ancient debris"
+      multiplier: 0.25
+
+    # Example colored leather armor
+    rainbow_leggings:
+      material: LEATHER_LEGGINGS
+      name: "&dRainbow Leggings"
+      lore:
+        - "&7Increases your multiplier by &d15%"
+        - "&7Bursting with color"
+      multiplier: 0.15
+      color: "#FF55FF"
+      permission: ghastutils.armor.rainbow
+
+# Backup settings
+backup:
+  enabled: true
+  interval: 24h  # Backup interval in hours
+  max-backups: 7  # Number of backups to keep
+
+# Economy settings (using Essentials integration)
+economy:
+  default-multiplier: 1.0
+  format: "$%.2f"
+  log-transactions: true
+
+# Block command settings
+block_commands:
+  enabled: true
+  default-cooldown: 5000  # 5 seconds in milliseconds
+
+# Crafting settings
+crafting:
+  enabled: true
+  log-crafting: true
+
+# Sell system settings
+sell:
+  enabled: true
+  enable-gui: true
+  fuzzy-matching: true
+
+# Permissions
+permissions:
+  # Multiplier permissions
+  multiplier:
+    admin: ghastutils.multiplier.admin
+    use: ghastutils.multiplier
+    view: ghastutils.multiplier.view
+    event: ghastutils.multiplier.event
+
+  # Sell permissions
+  sell:
+    use: ghastutils.sell
+    gui: ghastutils.sell.gui
+    admin: ghastutils.sell.admin
+
+  # Crafting permissions
+  crafting:
+    use: ghastutils.crafting
+    admin: ghastutils.crafting.admin
+
+  # Block permissions
+  block:
+    use: ghastutils.block
+    admin: ghastutils.block.admin
+
+  # Armor permissions
+  armor:
+    use: ghastutils.armor
+    admin: ghastutils.armor.admin
+
+# Command aliases
+command-aliases:
+  sell:
+    - s
+    - sellitems

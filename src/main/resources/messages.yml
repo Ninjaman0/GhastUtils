@@ -1,0 +1,75 @@
+# GhastUtils Messages
+# Version 1.0.0
+
+# Permission message
+permission:
+  denied: "&cYou don't have permission to use this command."
+
+# Reload command messages
+reload:
+  start: "&6Reloading GhastUtils..."
+  success: "&aGhastUtils has been reloaded successfully!"
+  config: "&aConfig has been reloaded successfully!"
+  messages: "&aMessages have been reloaded successfully!"
+  error: "&cAn error occurred while reloading: %error%"
+
+# Multiplier messages
+multiplier:
+  global-set: "&aGlobal multiplier set to &f%multiplier%x"
+  booster:
+    activated: "&aBooster activated! Multiplier: &f%multiplier%x &afor &f%duration%"
+    expired: "&cYour booster has expired!"
+    given: "&aYou gave &f%player% &aa booster with multiplier &f%multiplier%x &afor &f%duration%"
+  pet:
+    activated: "&aPet boost activated! Multiplier: &f%multiplier%x"
+    deactivated: "&cYour pet boost has been deactivated."
+
+# Armor messages
+armor:
+  equipped: "&aEquipped &f%name% &a(+%multiplier%% multiplier)"
+  unequipped: "&cUnequipped &f%name% &c(-%multiplier%% multiplier)"
+  permission-required: "&cYou don't have permission to use this armor piece."
+  total-multiplier: "&aYour armor multiplier is now &f%multiplier%x"
+  max-multiplier: "&cYou've reached the maximum armor multiplier of &f%multiplier%x"
+  damaged: "&cYour %piece% is damaged and will be less effective until repaired."
+  received: "&aYou received %amount%x %armor%"
+  received-dropped: "&aYou received %armor%, but some items were dropped because your inventory is full."
+  taken: "&cAdmin removed %amount%x %armor% from your inventory."
+
+# Sell messages
+sell:
+  gui-title: "&6Sell Items"
+  gui-sell-button: "&a&lSell Items"
+  gui-cancel-button: "&c&lCancel"
+  no-items: "&cYou don't have any items to sell!"
+  no-sellable-items: "&cNone of your items can be sold!"
+  inventory-full: "&cYour inventory is full! Some items have been dropped on the ground."
+  sold-header: "&aSold %items% items for %price%!"
+  sold-multiplier: "&aMultiplier applied: &f%multiplier%x"
+  sold-item: "&7- %amount%x %item%"
+
+# Crafting messages
+crafting:
+  created: "&aCreated custom item &f%item%"
+  recipe-set: "&aRecipe for &f%item% &ahas been set!"
+  recipe-cleared: "&aRecipe for &f%item% &ahas been cleared!"
+  crafted: "&aYou crafted &f%item%&a!"
+  missing-materials: "&cYou don't have the required materials to craft this item."
+  missing-permission: "&cYou don't have permission to craft this item."
+  inventory-full: "&cYour inventory is full!"
+
+# Block messages
+block:
+  permission-required: "&cYou don't have permission to use this block."
+  cooldown: "&cThis block is on cooldown for &f%time%&c."
+  placed: "&aPlaced &f%block% &aat %location%"
+  removed: "&aRemoved &f%block% &afrom %location%"
+
+# Event messages
+event:
+  started: "&a[Event] &f%name% &ahas started! Multiplier: &f+%value%x"
+  started-time: "&a[Event] &f%name% &ahas started! Multiplier: &f+%value%x &afor &f%duration%"
+  ended: "&c[Event] &f%name% &chas ended!"
+  not-found: "&cEvent template &f%id% &cnot found!"
+  already-running: "&cEvent &f%id% &cis already running!"
+  not-running: "&cEvent &f%id% &cis not currently running!"

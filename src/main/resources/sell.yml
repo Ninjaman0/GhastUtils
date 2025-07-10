@@ -1,0 +1,121 @@
+# ===========================================
+# GhastUtils Sell Configuration
+# ===========================================
+
+# Item configuration
+items:
+  # Regular materials
+  diamond:
+    material: DIAMOND
+    itemname: ""
+    base_price: 100.0
+    permission: "NONE"
+
+  emerald:
+    material: EMERALD
+    itemname: ""
+    base_price: 150.0
+    permission: "NONE"
+
+  gold_ingot:
+    material: GOLD_INGOT
+    itemname: ""
+    base_price: 50.0
+    permission: "NONE"
+
+  iron_ingot:
+    material: IRON_INGOT
+    itemname: ""
+    base_price: 25.0
+    permission: "NONE"
+
+  coal:
+    material: COAL
+    itemname: ""
+    base_price: 5.0
+    permission: "NONE"
+
+  # Custom items with names
+  ruby:
+    material: REDSTONE
+    itemname: "&c&lRuby"
+    base_price: 200.0
+    lore:
+      - "&7A rare gem with magical properties"
+    custom_model_data: 1001
+    permission: "ghastutils.sell.gems"
+
+  sapphire:
+    material: LAPIS_LAZULI
+    itemname: "&9&lSapphire"
+    base_price: 180.0
+    lore:
+      - "&7A beautiful blue gemstone"
+    custom_model_data: 1002
+    permission: "ghastutils.sell.gems"
+
+  amethyst:
+    material: AMETHYST_SHARD
+    itemname: "&d&lAmethyst Crystal"
+    base_price: 160.0
+    lore:
+      - "&7A purple crystal with mystical powers"
+    custom_model_data: 1003
+    permission: "ghastutils.sell.gems"
+
+  # Special items with NBT data
+  magic_dust:
+    material: GLOWSTONE_DUST
+    itemname: "&e&lMagic Dust"
+    base_price: 500.0
+    lore:
+      - "&7Magical dust that sparkles"
+      - "&7with mystical energy"
+    custom_model_data: 1004
+    permission: "ghastutils.sell.magic"
+    nbt_data:
+      ghastutils.magical: "true"
+      ghastutils.tier: "rare"
+
+  enchanted_diamond:
+    material: DIAMOND
+    itemname: "&b&lEnchanted Diamond"
+    base_price: 350.0
+    lore:
+      - "&7A diamond infused with"
+      - "&7magical enchantments"
+    custom_model_data: 1005
+    permission: "ghastutils.sell.enchanted"
+    nbt_data:
+      ghastutils.enchanted: "true"
+      ghastutils.quality: "excellent"
+
+  dragon_scale:
+    material: PHANTOM_MEMBRANE
+    itemname: "&5&lDragon Scale"
+    base_price: 1000.0
+    lore:
+      - "&7A scale from an ancient dragon"
+      - "&7Extremely rare and valuable"
+    custom_model_data: 1006
+    permission: "ghastutils.sell.dragon"
+    nbt_data:
+      ghastutils.dragonpart: "scale"
+      ghastutils.rarity: "legendary"
+
+# Settings
+settings:
+  # Whether to allow selling items with damage
+  allow_damaged: true
+
+  # Whether to use fuzzy matching for item names and lore
+  fuzzy_matching: true
+
+  # Default permission required to sell items (NONE for no permission)
+  default_permission: "NONE"
+
+  # Sound to play when selling items
+  sell_sound: "ENTITY_PLAYER_LEVELUP"
+
+  # Message to display when selling items
+  sell_message: "&aSold %count% items for $%amount%"

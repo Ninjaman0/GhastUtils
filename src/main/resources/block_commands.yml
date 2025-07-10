@@ -1,0 +1,102 @@
+# ===========================================
+# GhastUtils Block Commands Configuration
+# ===========================================
+
+# Custom block definitions
+blocks:
+  # Example - Teleport Pad
+  teleport_pad:
+    name: "&b&lTeleport Pad"
+    material: LIGHT_BLUE_GLAZED_TERRACOTTA
+    lore:
+      - "&7Step on this block to teleport"
+      - "&7to the server spawn point"
+    permission: "block.teleport"
+    custom_model_data: 2001
+    commands:
+      RIGHT_CLICK:
+        - "console: spawn %player%"
+        - "message: &aTeleporting to spawn..."
+      LEFT_CLICK:
+        - "message: &7This is a teleport pad. Step on it to teleport to spawn."
+
+  # Example - Reward Chest
+  reward_chest:
+    name: "&6&lDaily Reward Chest"
+    material: CHEST
+    lore:
+      - "&7Right-click once per day"
+      - "&7to receive random rewards!"
+    permission: "block.reward"
+    custom_model_data: 2002
+    commands:
+      RIGHT_CLICK:
+        - "console: eco give %player% 500"
+        - "console: give %player% diamond 3"
+        - "message: &aYou received your daily reward!"
+      SHIFT_RIGHT_CLICK:
+        - "message: &7You can claim this reward once per day."
+      LEFT_CLICK:
+        - "message: &7This is a daily reward chest. Right-click to claim!"
+
+  # Example - Command Block
+  command_block:
+    name: "&5&lMagic Command Block"
+    material: PURPLE_CONCRETE
+    lore:
+      - "&7A magical block that executes"
+      - "&7commands when interacted with"
+    permission: "block.command"
+    custom_model_data: 2003
+    commands:
+      RIGHT_CLICK:
+        - "player: time day"
+        - "message: &aSet time to day!"
+      SHIFT_RIGHT_CLICK:
+        - "player: time night"
+        - "message: &aSet time to night!"
+      LEFT_CLICK:
+        - "message: &7Right-click to set time to day, shift-right-click for night."
+
+  # Example - Shop Block
+  shop_block:
+    name: "&a&lShop Block"
+    material: EMERALD_BLOCK
+    lore:
+      - "&7Right-click to open the shop"
+      - "&7Left-click for shop information"
+    permission: "block.shop"
+    custom_model_data: 2004
+    commands:
+      RIGHT_CLICK:
+        - "console: shop %player%"
+        - "message: &aOpening shop menu..."
+      LEFT_CLICK:
+        - "message: &7This is a shop block. Right-click to open the shop menu."
+
+  # Example - Event Block
+  event_block:
+    name: "&d&lEvent Block"
+    material: PURPUR_BLOCK
+    lore:
+      - "&7Activates a special event"
+      - "&7when right-clicked"
+    permission: "block.event"
+    custom_model_data: 2005
+    commands:
+      RIGHT_CLICK:
+        - "console: broadcast &d%player% has activated a special event!"
+        - "console: effect give @a speed 60 1"
+        - "console: effect give @a jump_boost 60 1"
+        - "message: &aYou activated a special event!"
+      LEFT_CLICK:
+        - "message: &7This block activates a special event for all players."
+
+# Locations of placed custom blocks
+# This section is managed automatically by the plugin
+placed_blocks:
+  "world,100,64,100": "teleport_pad"
+  "world,105,64,105": "reward_chest"
+  "world,110,64,110": "command_block"
+  "world,-100,64,100": "shop_block"
+  "world,-105,64,105": "event_block"

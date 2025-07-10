@@ -1,0 +1,107 @@
+name: GhastUtils
+version: '1.5'
+main: com.ninja.ghastutils.GhastUtils
+api-version: '1.21'
+authors: [ Ninja0_0 ]
+description:  A comprehensive utility plugin with multipliers, selling, crafting, and interactive blocks
+softdepend:
+  - Vault
+  - PlaceholderAPI
+  - RivalPets
+  - EssentialsX
+
+
+
+
+commands:
+  gutil:
+    description: Main command for GhastUtils
+    usage: /gutil [subcommand]
+    aliases: [ghastutils, gu]
+    permission: ghastutils.command
+
+  sell:
+    description: Sell items in your inventory
+    usage: /sell [gui]
+    aliases: [ghsell]
+    permission: ghastutils.sell
+
+  sellgui:
+    description: Open the sell GUI
+    usage: /sellgui
+    aliases: [sell gui]
+    permission: ghastutils.sell.gui
+
+permissions:
+  ghastutils.command:
+    description: Allows use of the main command
+    default: true
+
+  ghastutils.admin:
+    description: Gives access to all admin commands
+    default: op
+    children:
+      ghastutils.admin.reload: true
+      ghastutils.multiplier.admin: true
+      ghastutils.multiplier.event.admin: true
+      ghastutils.sell.admin: true
+      ghastutils.crafting.admin: true
+      ghastutils.block.admin: true
+      ghastutils.armor.admin: true
+
+  ghastutils.admin.reload:
+    description: Allows reloading the plugin configuration
+    default: op
+
+  ghastutils.bypass.enchant:
+    default: op
+  ghastutils.sell.autosell:
+    description: Allows using the auto-sell feature
+    default: op
+  ghastutils.multiplier:
+    description: Allows checking multiplier status
+    default: true
+
+  ghastutils.multiplier.admin:
+    description: Allows managing multipliers
+    default: op
+
+  ghastutils.multiplier.event.admin:
+    description: Allows managing event multipliers
+    default: op
+
+  ghastutils.sell:
+    description: Allows selling items
+    default: true
+
+  ghastutils.sell.gui:
+    description: Allows using the sell GUI
+    default: true
+
+  ghastutils.sell.admin:
+    description: Allows managing sellable items
+    default: op
+
+  ghastutils.crafting:
+    description: Allows viewing crafting recipes
+    default: true
+
+  ghastutils.crafting.admin:
+    description: Allows managing custom recipes
+    default: op
+
+  ghastutils.block.admin:
+    description: Allows managing custom blocks
+    default: op
+
+  ghastutils.armor.admin:
+    description: Allows managing custom armor
+    default: op
+
+  ghastutils.booster:
+    description: Allows managing boosters
+    default: op
+
+  ghastutils.pet:
+    description: Allows managing pet multipliers
+    default: op

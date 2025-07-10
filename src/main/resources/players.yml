@@ -1,0 +1,27 @@
+# ===========================================
+# GhastUtils Players Data
+# ===========================================
+
+# This file stores player-specific data
+# Do not edit manually unless you know what you're doing!
+
+players:
+  # Example player data
+  "550e8400-e29b-41d4-a716-446655440000":
+    booster:
+      multiplier: 2.0
+      expires: 1747545600
+
+    pet:
+      active: true
+      multiplier: 0.5
+
+  # Another example player
+  "f47ac10b-58cc-4372-a567-0e02b2c3d479":
+    booster:
+      multiplier: 1.5
+      expires: 1747459200
+
+    pet:
+      active: false
+      multiplier: 0.0

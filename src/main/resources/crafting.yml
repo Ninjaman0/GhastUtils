@@ -1,0 +1,109 @@
+# Example custom item configuration for GhastUtils
+example_item:
+  itemname: "&6Example Item"
+  material: DIAMOND_SWORD
+  lore:
+    - "&7This is an example custom item"
+    - "&7with multiple lines of lore"
+  permission: "craft.example_item"
+  glow: true
+  no-vanilla: false
+  custom_model_data: 1000
+  flags:
+    hide_attributes: true
+    hide_dye: true
+  recipe:
+    1: STICK:1
+    2: DIAMOND:1
+    5: STICK:1
+    7: STICK:1
+    8: DIAMOND:1
+    9: STICK:1
+  effects:
+    RIGHT_CLICK:
+      - "player: say I used the example item!"
+      - "console: give %player% diamond 1"
+
+custom_potion:
+  itemname: "&bCustom Potion"
+  material: POTION
+  lore:
+    - "&7A special potion with custom effects"
+  permission: "craft.custom_potion"
+  glow: false
+  custom_model_data: 1234
+  recipe:
+    2: GLASS_BOTTLE:1
+    4: GOLD_INGOT:1
+    5: REDSTONE:1
+    6: GLASS_BOTTLE:1
+    8: GOLD_INGOT:1
+  effects:
+    RIGHT_CLICK:
+      - "console: effect give %player% regeneration 30 1"
+    LEFT_CLICK:
+      - "player: say I left-clicked the potion!"
+
+enchanted_book:
+  itemname: "&dSpecial Enchanted Book"
+  material: ENCHANTED_BOOK
+  lore:
+    - "&7Contains powerful enchantments"
+  permission: "craft.enchanted_book"
+  glow: true
+  recipe:
+    1: PAPER:1
+    2: PAPER:1
+    3: PAPER:1
+    4: LAPIS_LAZULI:1
+    5: DIAMOND:1
+    6: LAPIS_LAZULI:1
+    7: PAPER:1
+    8: PAPER:1
+    9: PAPER:1
+  effects:
+    RIGHT_CLICK:
+      - "console: enchant %player% hand sharpness 5"
+      - "console: enchant %player% hand fire_aspect 2"
+
+# An item that requires another custom item in its recipe
+advanced_item:
+  itemname: "&cAdvanced Item"
+  material: NETHERITE_SWORD
+  lore:
+    - "&7Requires other custom items to craft"
+  permission: "craft.advanced_item"
+  recipe:
+    1: example_item:1
+    3: example_item:1
+    4: NETHERITE_INGOT:1
+    5: custom_potion:1
+    6: NETHERITE_INGOT:1
+    7: example_item:1
+    9: example_item:1
+
+
+autoseller:
+  itemname: '&aAuto Seller'
+  material: NETHER_STAR
+  lore:
+    - '&7Automatically sells items in your inventory'
+    - '&7when you right-click it.'
+    - '&7this item auto sells items every 3 seconds.'
+  permission: craft.autoseller
+  glow: true
+  no-vanilla: false
+  custom_model_data: 2000
+  recipe:
+    '1': VAULT:1
+    '2': VAULT:1
+    '3': IRON_INGOT:1
+    '4': DIAMOND:1
+    '5': GOLD_INGOT:1
+    '6': DIAMOND:1
+    '7': IRON_INGOT:1
+    '8': CHEST:1
+    '9': IRON_INGOT:1
+  effects:
+    RIGHT_CLICK:
+      - 'op: gu autosell'

@@ -1,0 +1,107 @@
+# ===========================================
+# GhastUtils Sell GUI Configuration
+# ===========================================
+
+# GUI settings
+settings:
+  rows: 6
+  title: "&6Sell Items"
+
+  # Border item settings
+  border:
+    material: BLACK_STAINED_GLASS_PANE
+    name: " "
+
+  # Info item settings
+  info:
+    slot: 4
+    material: PAPER
+    name: "&6&lSell Items"
+    lore:
+      - "&7Place items in the empty slots to sell them"
+      - "&7Click the sell button to sell all items"
+
+  # Multiplier info settings
+  multiplier:
+    slot: 47
+    material: EXPERIENCE_BOTTLE
+    name: "&6&lMultiplier: &f%multiplier%x"
+    lore:
+      - "&7Your current sell multiplier"
+      - "&7This affects all sell prices"
+
+  # Total value settings
+  total:
+    slot: 51
+    material: GOLD_INGOT
+    name: "&6&lTotal Value: &f%value%"
+    lore:
+      - "&7Items: &f%count%"
+      - "&7Multiplier: &f%multiplier%x"
+
+  # Sell button settings
+  sell:
+    slot: 49
+    material: EMERALD
+    name: "&a&lSell Items"
+    lore:
+      - "&7Click to sell all items in the GUI"
+      - "&7You will receive &f%value%"
+
+  # Cancel button settings
+  cancel:
+    slot: 45
+    material: BARRIER
+    name: "&c&lCancel"
+    lore:
+      - "&7Click to cancel and return items"
+
+# Slot configuration
+slots:
+  # These are the slots where players can place items to sell
+  sell:
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 28
+    - 29
+    - 30
+    - 31
+    - 32
+    - 33
+    - 34
+
+# Sound effects
+sounds:
+  open:
+    name: ENTITY_EXPERIENCE_ORB_PICKUP
+    volume: 1.0
+    pitch: 1.0
+
+  sell:
+    name: ENTITY_PLAYER_LEVELUP
+    volume: 1.0
+    pitch: 1.0
+
+  cancel:
+    name: ENTITY_VILLAGER_NO
+    volume: 1.0
+    pitch: 1.0
+
+# Animation settings
+animation:
+  enabled: true
+  type: "SPARKLE"
+  count: 20
+  speed: 0.5
