@@ -1,4 +1,3 @@
-
 package com.ninja.ghastutils.crafting;
 
 import com.ninja.ghastutils.GhastUtils;
@@ -21,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -39,13 +39,16 @@ import org.bukkit.metadata.MetadataValue;
 public class CraftingManager {
     private final GhastUtils plugin;
     private final Map<String, CustomItem> customItems;
+    private final Map<String, CustomIngredient> customIngredients;
     private final Map<Player, CraftingSession> craftingSessions;
     private boolean recipesRegistered = false;
 
     public CraftingManager(GhastUtils plugin) {
         this.plugin = plugin;
         this.customItems = new ConcurrentHashMap();
+        this.customIngredients = new ConcurrentHashMap();
         this.craftingSessions = new HashMap();
+        this.loadCustomIngredients();
         this.loadCustomItems();
         Bukkit.getScheduler().runTask(plugin, this::registerAllRecipes);
     }
@@ -80,7 +83,9 @@ public class CraftingManager {
 
         });
         this.customItems.clear();
+        this.customIngredients.clear();
         this.recipesRegistered = false;
+        this.loadCustomIngredients();
         this.loadCustomItems();
         this.registerAllRecipes();
         this.logCraftingChanges("Reloaded all custom items and recipes");
@@ -247,6 +252,44 @@ public class CraftingManager {
         }
     }
 
+    private void loadCustomIngredients() {
+        FileConfiguration craftingConfig = this.plugin.getConfigManager().getConfig(ConfigType.CRAFTING);
+        ConfigurationSection ingredientsSection = craftingConfig.getConfigurationSection("ingredients");
+        
+        if (ingredientsSection == null) {
+            LogManager.debug("No custom ingredients found in crafting.yml");
+            return;
+        }
+
+        for (String ingredientId : ingredientsSection.getKeys(false)) {
+            try {
+                ConfigurationSection ingredientSection = ingredientsSection.getConfigurationSection(ingredientId);
+                if (ingredientSection != null) {
+                    String itemName = ingredientSection.getString("item-name", ingredientId);
+                    
+                    Material material;
+                    try {
+                        material = Material.valueOf(ingredientSection.getString("material", "WHEAT").toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        LogManager.warning("Invalid material for ingredient " + ingredientId);
+                        continue;
+                    }
+                    
+                    List<String> lore = ingredientSection.getStringList("lore");
+                    int customModelData = ingredientSection.getInt("custom-model-data", -1);
+                    
+                    CustomIngredient ingredient = new CustomIngredient(ingredientId, itemName, material, lore, customModelData);
+                    this.customIngredients.put(ingredientId, ingredient);
+                    LogManager.debug("Loaded custom ingredient: " + ingredientId);
+                }
+            } catch (Exception e) {
+                LogManager.warning("Error loading custom ingredient " + ingredientId + ": " + e.getMessage());
+            }
+        }
+        
+        LogManager.info("Loaded " + this.customIngredients.size() + " custom ingredients");
+    }
+
     private void loadCustomItems() {
         FileConfiguration craftingConfig = this.plugin.getConfigManager().getConfig(ConfigType.CRAFTING);
         if (craftingConfig == null) {
@@ -313,7 +356,12 @@ public class CraftingManager {
                                                 Material ingredientMaterial = Material.valueOf(ingredientId.toUpperCase());
                                                 ingredient = new RecipeIngredient(ingredientMaterial, amount);
                                             } catch (IllegalArgumentException var23) {
-                                                ingredient = new RecipeIngredient(ingredientId, amount);
+                                                // Check if it's a custom ingredient
+                                                if (this.customIngredients.containsKey(ingredientId)) {
+                                                    ingredient = new RecipeIngredient(ingredientId, amount, true);
+                                                } else {
+                                                    ingredient = new RecipeIngredient(ingredientId, amount, false);
+                                                }
                                             }
 
                                             recipe.put(slotNum, ingredient);
@@ -350,45 +398,86 @@ public class CraftingManager {
 
     public void saveItems() {
         FileConfiguration craftingConfig = this.plugin.getConfigManager().getConfig(ConfigType.CRAFTING);
-        if (craftingConfig != null) {
-            for(String key : craftingConfig.getKeys(false)) {
-                craftingConfig.set(key, (Object)null);
-            }
-
-            for(CustomItem item : this.customItems.values()) {
-                String itemId = item.getId();
-                craftingConfig.set(itemId + ".itemname", item.getName());
-                craftingConfig.set(itemId + ".material", item.getMaterial().toString());
-                craftingConfig.set(itemId + ".lore", item.getLore());
-                craftingConfig.set(itemId + ".permission", item.getPermission());
-                craftingConfig.set(itemId + ".glow", item.isGlow());
-                craftingConfig.set(itemId + ".no-vanilla", item.isVanillaFeaturesDisabled());
-                if (item.getCustomModelData() != -1) {
-                    craftingConfig.set(itemId + ".custom_model_data", item.getCustomModelData());
-                }
-
-                for(ItemFlag flag : item.getFlags()) {
-                    craftingConfig.set(itemId + ".flags." + flag.name().toLowerCase(), true);
-                }
-
-                if (!item.getRecipe().isEmpty()) {
-                    for(Map.Entry<Integer, RecipeIngredient> entry : item.getRecipe().entrySet()) {
-                        RecipeIngredient ingredient = (RecipeIngredient)entry.getValue();
-                        String ingredientString = ingredient.isMaterial() ? ingredient.getMaterial().toString() + ":" + ingredient.getAmount() : ingredient.getCustomItemId() + ":" + ingredient.getAmount();
-                        craftingConfig.set(itemId + ".recipe." + String.valueOf(entry.getKey()), ingredientString);
-                    }
-                }
-
-                if (!item.getEffects().isEmpty()) {
-                    for(Map.Entry<String, List<String>> entry : item.getEffects().entrySet()) {
-                        craftingConfig.set(itemId + ".effects." + (String)entry.getKey(), entry.getValue());
-                    }
+        
+        // Save ingredients first
+        craftingConfig.set("ingredients", null);
+        if (!this.customIngredients.isEmpty()) {
+            for (Map.Entry<String, CustomIngredient> entry : this.customIngredients.entrySet()) {
+                String ingredientId = entry.getKey();
+                CustomIngredient ingredient = entry.getValue();
+                
+                craftingConfig.set("ingredients." + ingredientId + ".item-name", ingredient.getName());
+                craftingConfig.set("ingredients." + ingredientId + ".material", ingredient.getMaterial().toString());
+                craftingConfig.set("ingredients." + ingredientId + ".lore", ingredient.getLore());
+                if (ingredient.getCustomModelData() != -1) {
+                    craftingConfig.set("ingredients." + ingredientId + ".custom-model-data", ingredient.getCustomModelData());
                 }
             }
-
-            this.plugin.getConfigManager().saveConfig(ConfigType.CRAFTING);
-            this.logCraftingChanges("Saved all custom items");
         }
+        
+        // Clear existing items section
+        for(String key : craftingConfig.getKeys(false)) {
+            if (!key.equals("ingredients")) {
+                craftingConfig.set(key, null);
+            }
+        }
+
+        for(CustomItem item : this.customItems.values()) {
+            String itemId = item.getId();
+            craftingConfig.set(itemId + ".itemname", item.getName());
+            craftingConfig.set(itemId + ".material", item.getMaterial().toString());
+            craftingConfig.set(itemId + ".lore", item.getLore());
+            craftingConfig.set(itemId + ".permission", item.getPermission());
+            craftingConfig.set(itemId + ".glow", item.isGlow());
+            craftingConfig.set(itemId + ".no-vanilla", item.isVanillaFeaturesDisabled());
+            if (item.getCustomModelData() != -1) {
+                craftingConfig.set(itemId + ".custom_model_data", item.getCustomModelData());
+            }
+
+            for(ItemFlag flag : item.getFlags()) {
+                craftingConfig.set(itemId + ".flags." + flag.name().toLowerCase(), true);
+            }
+
+            if (!item.getRecipe().isEmpty()) {
+                for(Map.Entry<Integer, RecipeIngredient> entry : item.getRecipe().entrySet()) {
+                    RecipeIngredient ingredient = (RecipeIngredient)entry.getValue();
+                    String ingredientString;
+                    if (ingredient.isMaterial()) {
+                        ingredientString = ingredient.getMaterial().toString() + ":" + ingredient.getAmount();
+                    } else {
+                        ingredientString = ingredient.getCustomItemId() + ":" + ingredient.getAmount();
+                    }
+                    craftingConfig.set(itemId + ".recipe." + String.valueOf(entry.getKey()), ingredientString);
+                }
+            }
+
+            if (!item.getEffects().isEmpty()) {
+                for(Map.Entry<String, List<String>> entry : item.getEffects().entrySet()) {
+                    craftingConfig.set(itemId + ".effects." + (String)entry.getKey(), entry.getValue());
+                }
+            }
+        }
+
+        this.plugin.getConfigManager().saveConfig(ConfigType.CRAFTING);
+        this.logCraftingChanges("Saved all custom items");
+    }
+
+    public boolean registerIngredient(String ingredientId, ItemStack item) {
+        if (ingredientId == null || item == null) {
+            return false;
+        }
+        
+        ItemMeta meta = item.getItemMeta();
+        String itemName = meta != null && meta.hasDisplayName() ? meta.getDisplayName() : ingredientId;
+        List<String> lore = meta != null && meta.hasLore() ? meta.getLore() : new ArrayList<>();
+        int customModelData = meta != null && meta.hasCustomModelData() ? meta.getCustomModelData() : -1;
+        
+        CustomIngredient ingredient = new CustomIngredient(ingredientId, itemName, item.getType(), lore, customModelData);
+        this.customIngredients.put(ingredientId, ingredient);
+        this.saveItems();
+        this.logCraftingChanges("Registered new ingredient: " + ingredientId);
+        
+        return true;
     }
 
     private void logCraftingChanges(String message) {
@@ -440,7 +529,12 @@ public class CraftingManager {
                     ItemStack itemStack = (ItemStack)entry.getValue();
                     if (itemStack != null) {
                         String customItemId = this.getCustomItemIdFromItemStack(itemStack);
-                        RecipeIngredient ingredient = customItemId != null ? new RecipeIngredient(customItemId, itemStack.getAmount()) : new RecipeIngredient(itemStack.getType(), itemStack.getAmount());
+                        RecipeIngredient ingredient;
+                        if (customItemId != null) {
+                            ingredient = new RecipeIngredient(customItemId, itemStack.getAmount(), false);
+                        } else {
+                            ingredient = new RecipeIngredient(itemStack.getType(), itemStack.getAmount());
+                        }
                         recipe.put((Integer)entry.getKey(), ingredient);
                     }
                 }
@@ -473,9 +567,14 @@ public class CraftingManager {
             for(RecipeIngredient ingredient : recipe.values()) {
                 if (!ingredient.isMaterial()) {
                     String ingredientId = ingredient.getCustomItemId();
-                    CustomItem ingredientItem = (CustomItem)this.customItems.get(ingredientId);
-                    if (ingredientItem != null && this.checkCircularDependencyRecursive(ingredientId, ingredientItem.getRecipe(), new HashSet(visited))) {
-                        return true;
+                    if (ingredient.isCustomIngredient()) {
+                        // Custom ingredients don't have recipes, so no circular dependency
+                        continue;
+                    } else {
+                        CustomItem ingredientItem = (CustomItem)this.customItems.get(ingredientId);
+                        if (ingredientItem != null && this.checkCircularDependencyRecursive(ingredientId, ingredientItem.getRecipe(), new HashSet(visited))) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -607,6 +706,9 @@ public class CraftingManager {
                 if (ingredient.isMaterial()) {
                     Material material = ingredient.getMaterial();
                     requiredMaterials.put(material, (Integer)requiredMaterials.getOrDefault(material, 0) + ingredient.getAmount());
+                } else if (ingredient.isCustomIngredient()) {
+                    String ingredientId = ingredient.getCustomItemId();
+                    requiredCustomItems.put(ingredientId, (Integer)requiredCustomItems.getOrDefault(ingredientId, 0) + ingredient.getAmount());
                 } else {
                     String customItemId = ingredient.getCustomItemId();
                     requiredCustomItems.put(customItemId, (Integer)requiredCustomItems.getOrDefault(customItemId, 0) + ingredient.getAmount());
@@ -649,13 +751,86 @@ public class CraftingManager {
         for(ItemStack item : player.getInventory().getContents()) {
             if (item != null) {
                 String customItemId = this.getCustomItemIdFromItemStack(item);
+                String ingredientId = this.getCustomIngredientIdFromItemStack(item);
+                
                 if (customItemId != null && customItemId.equals(itemId)) {
+                    count += item.getAmount();
+                } else if (ingredientId != null && ingredientId.equals(itemId)) {
                     count += item.getAmount();
                 }
             }
         }
 
         return count >= amount;
+    }
+
+    private String getCustomIngredientIdFromItemStack(ItemStack itemStack) {
+        if (itemStack == null || !itemStack.hasItemMeta()) {
+            return null;
+        }
+        
+        ItemMeta meta = itemStack.getItemMeta();
+        if (meta == null) {
+            return null;
+        }
+        
+        // Check NBT first
+        if (NBTUtils.hasString(meta, "ghastutils.custom_ingredient_id")) {
+            String id = NBTUtils.getString(meta, "ghastutils.custom_ingredient_id");
+            if (this.customIngredients.containsKey(id)) {
+                return id;
+            }
+        }
+        
+        // Check by matching properties
+        for (Map.Entry<String, CustomIngredient> entry : this.customIngredients.entrySet()) {
+            if (this.isMatchingCustomIngredient(itemStack, entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        
+        return null;
+    }
+
+    private boolean isMatchingCustomIngredient(ItemStack itemStack, CustomIngredient ingredient) {
+        if (itemStack == null || !itemStack.hasItemMeta()) {
+            return false;
+        }
+        
+        ItemMeta meta = itemStack.getItemMeta();
+        if (meta == null || itemStack.getType() != ingredient.getMaterial()) {
+            return false;
+        }
+        
+        // Check display name
+        String displayName = meta.getDisplayName();
+        String expectedName = MessageUtils.translateItemColors(ingredient.getName());
+        if (!expectedName.equals(displayName)) {
+            return false;
+        }
+        
+        // Check lore
+        List<String> lore = meta.getLore() != null ? meta.getLore() : new ArrayList<>();
+        List<String> expectedLore = MessageUtils.translateItemColors(ingredient.getLore());
+        if (lore.size() != expectedLore.size()) {
+            return false;
+        }
+        
+        for (int i = 0; i < lore.size(); i++) {
+            if (!lore.get(i).equals(expectedLore.get(i))) {
+                return false;
+            }
+        }
+        
+        // Check custom model data
+        if (ingredient.getCustomModelData() != -1) {
+            if (!ItemUtils.hasCustomModelData(meta) || 
+                ItemUtils.getCustomModelData(meta) != ingredient.getCustomModelData()) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     public boolean craftItem(Player player, String itemId) {
@@ -708,6 +883,9 @@ public class CraftingManager {
             if (ingredient.isMaterial()) {
                 Material material = ingredient.getMaterial();
                 materialsToRemove.put(material, (Integer)materialsToRemove.getOrDefault(material, 0) + ingredient.getAmount());
+            } else if (ingredient.isCustomIngredient()) {
+                String ingredientId = ingredient.getCustomItemId();
+                customItemsToRemove.put(ingredientId, (Integer)customItemsToRemove.getOrDefault(ingredientId, 0) + ingredient.getAmount());
             } else {
                 String customItemId = ingredient.getCustomItemId();
                 customItemsToRemove.put(customItemId, (Integer)customItemsToRemove.getOrDefault(customItemId, 0) + ingredient.getAmount());
@@ -743,7 +921,10 @@ public class CraftingManager {
             for(ItemStack item : player.getInventory().getContents()) {
                 if (item != null) {
                     String itemId = this.getCustomItemIdFromItemStack(item);
-                    if (itemId != null && itemId.equals(customItemId)) {
+                    String ingredientId = this.getCustomIngredientIdFromItemStack(item);
+                    
+                    if ((itemId != null && itemId.equals(customItemId)) || 
+                        (ingredientId != null && ingredientId.equals(customItemId))) {
                         int amountInStack = item.getAmount();
                         if (amountInStack <= amountToRemove) {
                             amountToRemove -= amountInStack;
@@ -769,6 +950,10 @@ public class CraftingManager {
 
     public Map<String, CustomItem> getCustomItems() {
         return new HashMap(this.customItems);
+    }
+
+    public Map<String, CustomIngredient> getCustomIngredients() {
+        return new HashMap<>(this.customIngredients);
     }
 
     public void removeCustomItem(String id) {
@@ -798,6 +983,9 @@ public class CraftingManager {
                 String name;
                 if (ingredient.isMaterial()) {
                     name = ingredient.getMaterial().toString();
+                } else if (ingredient.isCustomIngredient()) {
+                    CustomIngredient customIngredient = this.customIngredients.get(ingredient.getCustomItemId());
+                    name = customIngredient != null ? customIngredient.getName() : ingredient.getCustomItemId();
                 } else {
                     name = ingredient.getCustomItemId();
                 }
@@ -877,5 +1065,53 @@ public class CraftingManager {
             }
 
         }
+    }
+
+    public String getCustomItemIdFromItemStack(ItemStack itemStack) {
+        if (itemStack == null || !itemStack.hasItemMeta()) {
+            return null;
+        }
+        
+        ItemMeta meta = itemStack.getItemMeta();
+        if (meta == null) {
+            return null;
+        }
+        
+        if (NBTUtils.hasString(meta, "ghastutils.custom_item_id")) {
+            String id = NBTUtils.getString(meta, "ghastutils.custom_item_id");
+            if (this.customItems.containsKey(id)) {
+                return id;
+            }
+        }
+        
+        for (CustomItem customItem : this.customItems.values()) {
+            if (this.isMatchingCustomItem(itemStack, customItem)) {
+                return customItem.getId();
+            }
+        }
+        
+        return null;
+    }
+
+    public static class CustomIngredient {
+        private final String id;
+        private final String name;
+        private final Material material;
+        private final List<String> lore;
+        private final int customModelData;
+
+        public CustomIngredient(String id, String name, Material material, List<String> lore, int customModelData) {
+            this.id = id;
+            this.name = name;
+            this.material = material;
+            this.lore = lore != null ? lore : new ArrayList<>();
+            this.customModelData = customModelData;
+        }
+
+        public String getId() { return id; }
+        public String getName() { return name; }
+        public Material getMaterial() { return material; }
+        public List<String> getLore() { return new ArrayList<>(lore); }
+        public int getCustomModelData() { return customModelData; }
     }
 }

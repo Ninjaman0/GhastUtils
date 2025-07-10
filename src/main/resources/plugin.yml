@@ -58,6 +58,15 @@ permissions:
   ghastutils.sell.autosell:
     description: Allows using the auto-sell feature
     default: op
+    
+  ghastutils.crafting.autocraft:
+    description: Allows using the auto-craft feature
+    default: op
+    
+  ghastutils.crafting.compactor:
+    description: Allows using the compactor feature
+    default: true
+    
   ghastutils.multiplier:
     description: Allows checking multiplier status
     default: true

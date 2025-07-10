@@ -51,7 +51,7 @@ public class MessageUtils {
 
     public static void sendMessage(Player player, String key, Map<String, String> placeholders) {
         String message = getMessage(key, placeholders);
-        player.sendMessage(message);
+        player.sendMessage(translateColors(message));
     }
 
     public static void sendMessage(Player player, String key) {
@@ -60,7 +60,7 @@ public class MessageUtils {
 
     public static void sendMessage(CommandSender sender, String key, Map<String, String> placeholders) {
         String message = getMessage(key, placeholders);
-        sender.sendMessage(message);
+        sender.sendMessage(translateColors(message));
     }
 
     public static void sendMessage(CommandSender sender, String key) {

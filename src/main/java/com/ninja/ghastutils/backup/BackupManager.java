@@ -1,4 +1,3 @@
-
 package com.ninja.ghastutils.backup;
 
 import com.ninja.ghastutils.GhastUtils;

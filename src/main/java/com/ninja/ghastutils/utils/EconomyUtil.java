@@ -4,6 +4,7 @@ package com.ninja.ghastutils.utils;
 import com.earth2me.essentials.Essentials;
 import com.earth2me.essentials.User;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -113,13 +114,20 @@ public class EconomyUtil {
 
     public static String formatCurrency(double amount) {
         if (!isInitialized()) {
-            return String.format("$%.2f", amount);
+            return formatNumber(amount, "$");
         } else {
             try {
-                return essentials.getSettings().getCurrencyFormat().format(BigDecimal.valueOf(amount));
+                String formatted = essentials.getSettings().getCurrencyFormat().format(BigDecimal.valueOf(amount));
+                return formatNumber(Double.parseDouble(formatted.replaceAll("[^\\d.]", "")), 
+                    formatted.replaceAll("[\\d.,]", ""));
             } catch (Exception var3) {
-                return String.format("$%.2f", amount);
+                return formatNumber(amount, "$");
             }
         }
+    }
+
+    private static String formatNumber(double amount, String symbol) {
+        DecimalFormat formatter = new DecimalFormat("#,###.00");
+        return symbol + formatter.format(amount);
     }
 }

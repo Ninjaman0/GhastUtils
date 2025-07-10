@@ -57,6 +57,24 @@ crafting:
   missing-materials: "&cYou don't have the required materials to craft this item."
   missing-permission: "&cYou don't have permission to craft this item."
   inventory-full: "&cYour inventory is full!"
+  autocraft-enabled: "&aAuto-crafting enabled (every 3 seconds)"
+  autocraft-disabled: "&cAuto-crafting disabled"
+  no-item-held: "&cYou must be holding an item to register as an ingredient."
+  ingredient-registered: "&aIngredient registered with ID: &f%id%"
+  ingredient-register-failed: "&cFailed to register ingredient with ID: &f%id%"
+  no-ingredients: "&cNo custom ingredients found."
+
+# Compactor messages
+compactor:
+  gui-title: "&6Compactor"
+  item-selected: "&aSelected &f%item% &afor compacting"
+  item-removed: "&cRemoved item from compactor"
+  no-recipe: "&cThis item doesn't have a crafting recipe"
+  not-custom-item: "&cThis is not a custom craftable item"
+  no-items-selected: "&cNo items selected for compacting"
+  started: "&aStarted compacting &f%count% &aitems"
+  stopped: "&cStopped compacting"
+  not-running: "&cCompactor is not currently running"
 
 # Block messages
 block:

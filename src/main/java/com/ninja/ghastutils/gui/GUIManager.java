@@ -32,6 +32,7 @@ public class GUIManager implements Listener {
     private final Map<UUID, SellGui> sellGuis;
     private final Map<UUID, CraftingEditorGui> craftingEditorGuis;
     private final Map<UUID, CraftingViewGui> craftingViewGuis;
+    private final Map<UUID, CompactorGui> compactorGuis;
     private long sessionTimeout = 600000L;
     private int cleanupTaskId = -1;
 
@@ -43,6 +44,7 @@ public class GUIManager implements Listener {
         this.sellGuis = new ConcurrentHashMap();
         this.craftingEditorGuis = new ConcurrentHashMap();
         this.craftingViewGuis = new ConcurrentHashMap();
+        this.compactorGuis = new ConcurrentHashMap();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         this.startCleanupTask();
     }
@@ -204,6 +206,10 @@ public class GUIManager implements Listener {
         this.craftingViewGuis.put(playerId, gui);
     }
 
+    public void registerCompactorGui(UUID playerId, CompactorGui gui) {
+        this.compactorGuis.put(playerId, gui);
+    }
+
     public SellGui getSellGui(UUID playerId) {
         return (SellGui)this.sellGuis.get(playerId);
     }
@@ -214,6 +220,10 @@ public class GUIManager implements Listener {
 
     public CraftingViewGui getCraftingViewGui(UUID playerId) {
         return (CraftingViewGui)this.craftingViewGuis.get(playerId);
+    }
+
+    public CompactorGui getCompactorGui(UUID playerId) {
+        return this.compactorGuis.get(playerId);
     }
 
     public GUISession getSession(Player player) {
@@ -259,6 +269,13 @@ public class GUIManager implements Listener {
                 this.craftingViewGuis.remove(playerId);
             }
 
+            if (this.compactorGuis.containsKey(playerId)) {
+                CompactorGui compactorGui = this.compactorGuis.remove(playerId);
+                if (compactorGui != null) {
+                    compactorGui.onClose();
+                }
+            }
+
             GUISession session = this.getSession(player);
             if (session != null) {
                 session.handleClose(event);
@@ -280,6 +297,8 @@ public class GUIManager implements Listener {
         this.sellGuis.remove(playerId);
         this.craftingEditorGuis.remove(playerId);
         this.craftingViewGuis.remove(playerId);
+        this.compactorGuis.remove(playerId);
+        CompactorGui.cleanupSession(playerId);
         GUISession session = this.getSession(player);
         if (session != null) {
             session.handleQuit(event);

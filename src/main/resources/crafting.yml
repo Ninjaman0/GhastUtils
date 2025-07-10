@@ -1,4 +1,29 @@
 # Example custom item configuration for GhastUtils
+
+# Custom ingredients that can be used in recipes
+ingredients:
+  grinding_wheat:
+    item-name: "&5Wheat&3!!"
+    material: WHEAT
+    lore:
+      - "Just normal wheat"
+    custom-model-data: 21245
+
+  magic_dust:
+    item-name: "&dMagic Dust"
+    material: GLOWSTONE_DUST
+    lore:
+      - "&7Magical dust with special properties"
+    custom-model-data: 21246
+
+  refined_iron:
+    item-name: "&7Refined Iron"
+    material: IRON_INGOT
+    lore:
+      - "&7Purified iron ingot"
+    custom-model-data: 21247
+
+# Custom craftable items
 example_item:
   itemname: "&6Example Item"
   material: DIAMOND_SWORD
@@ -13,7 +38,7 @@ example_item:
     hide_attributes: true
     hide_dye: true
   recipe:
-    1: STICK:1
+    1: grinding_wheat:30
     2: DIAMOND:1
     5: STICK:1
     7: STICK:1
