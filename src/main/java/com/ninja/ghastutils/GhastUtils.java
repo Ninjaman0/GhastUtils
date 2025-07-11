@@ -1,4 +1,3 @@
-
 package com.ninja.ghastutils;
 
 import com.ninja.ghastutils.armor.ArmorListener;
@@ -7,6 +6,7 @@ import com.ninja.ghastutils.backup.BackupManager;
 import com.ninja.ghastutils.blocks.BlockManager;
 import com.ninja.ghastutils.commands.MainCommand;
 import com.ninja.ghastutils.commands.subcommands.AutoSellCommand;
+import com.ninja.ghastutils.commands.subcommands.AutoCraftCommand;
 import com.ninja.ghastutils.config.ConfigManager;
 import com.ninja.ghastutils.crafting.CraftingManager;
 import com.ninja.ghastutils.data.PlayerDataManager;
@@ -16,6 +16,7 @@ import com.ninja.ghastutils.listeners.ArmorPlaceListener;
 import com.ninja.ghastutils.listeners.BlockInteractionListener;
 import com.ninja.ghastutils.listeners.GuiListener;
 import com.ninja.ghastutils.listeners.MultiplierListener;
+import com.ninja.ghastutils.listeners.VanillaFeatureListener;
 import com.ninja.ghastutils.multiplier.MultiplierManager;
 import com.ninja.ghastutils.multiplier.api.multiplierProvider;
 import com.ninja.ghastutils.papi.PlaceholderManager;
@@ -47,9 +48,11 @@ public class GhastUtils extends JavaPlugin {
     private GUIManager guiManager;
     private GuiListener guiListener;
     private AutoSellCommand autoSellCommand;
+    private AutoCraftCommand autoCraftCommand;
     private BlockManager blockManager;
     private BackupManager backupManager;
     private EventBossBar eventBossBar;
+    private VanillaFeatureListener vanillaFeatureListener;
 
     public void onEnable() {
         instance = this;
@@ -69,6 +72,8 @@ public class GhastUtils extends JavaPlugin {
         this.blockManager = new BlockManager(this);
         this.backupManager = new BackupManager(this);
         this.guiListener = new GuiListener(this);
+        this.vanillaFeatureListener = new VanillaFeatureListener(this);
+        
         this.getServer().getPluginManager().registerEvents(this.guiListener, this);
         this.getServer().getPluginManager().registerEvents(new ArmorPlaceListener(), this);
         this.registerCommands();
@@ -86,7 +91,9 @@ public class GhastUtils extends JavaPlugin {
     private void registerCommands() {
         MainCommand mainCommand = new MainCommand(this);
         this.autoSellCommand = new AutoSellCommand(this);
+        this.autoCraftCommand = new AutoCraftCommand(this);
         this.registerCommand("gutil", mainCommand, mainCommand);
+        
         CommandExecutor sellExecutor = (sender, command, label, args) -> {
             if (args.length > 0 && args[0].equalsIgnoreCase("gui")) {
                 String[] newArgs = new String[0];
@@ -95,9 +102,12 @@ public class GhastUtils extends JavaPlugin {
                 return mainCommand.onCommand(sender, command, label, new String[]{"sell"});
             }
         };
-        TabCompleter sellTabCompleter = (sender, command, alias, args) -> (List)(args.length == 1 ? Arrays.asList("gui") : new ArrayList());
+        TabCompleter sellTabCompleter = (sender, command, alias, args) -> 
+            args.length == 1 ? Arrays.asList("gui") : new ArrayList<>();
         this.registerCommand("sell", sellExecutor, sellTabCompleter);
-        this.registerCommand("sellgui", (sender, command, label, args) -> mainCommand.onCommand(sender, command, label, new String[]{"sell", "gui"}), (sender, command, alias, args) -> new ArrayList());
+        this.registerCommand("sellgui", (sender, command, label, args) -> 
+            mainCommand.onCommand(sender, command, label, new String[]{"sell", "gui"}), 
+            (sender, command, alias, args) -> new ArrayList<>());
     }
 
     private void registerCommand(String name, CommandExecutor executor, TabCompleter tabCompleter) {
@@ -109,7 +119,6 @@ public class GhastUtils extends JavaPlugin {
         } else {
             LogManager.error("Failed to register command: " + name);
         }
-
     }
 
     public void onDisable() {
@@ -123,6 +132,10 @@ public class GhastUtils extends JavaPlugin {
 
         if (this.autoSellCommand != null) {
             this.autoSellCommand.onDisable();
+        }
+
+        if (this.autoCraftCommand != null) {
+            this.autoCraftCommand.onDisable();
         }
 
         if (this.backupManager != null) {
@@ -148,7 +161,6 @@ public class GhastUtils extends JavaPlugin {
                 LogManager.info("Hooked into PlaceholderAPI!");
             }, 20L);
         }
-
     }
 
     private void setupRivalPetsIntegration() {
@@ -161,7 +173,6 @@ public class GhastUtils extends JavaPlugin {
                     LogManager.warning("Failed to hook into RivalPets: " + e.getMessage());
                 }
             }
-
         }, 60L);
     }
 
@@ -172,15 +183,14 @@ public class GhastUtils extends JavaPlugin {
             } catch (Exception e) {
                 LogManager.error("Error checking booster expirations", e);
             }
-
         }, 1200L, 1200L);
+        
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
             try {
                 this.playerDataManager.saveAllPlayerData();
             } catch (Exception e) {
                 LogManager.error("Error auto-saving player data", e);
             }
-
         }, 6000L, 6000L);
     }
 
@@ -273,5 +283,9 @@ public class GhastUtils extends JavaPlugin {
 
     public EventBossBar getEventBossBar() {
         return this.eventBossBar;
+    }
+
+    public AutoCraftCommand getAutoCraftCommand() {
+        return this.autoCraftCommand;
     }
 }

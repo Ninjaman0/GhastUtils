@@ -1,4 +1,3 @@
-
 package com.ninja.ghastutils.listeners;
 
 import com.ninja.ghastutils.GhastUtils;
@@ -22,64 +21,61 @@ public class VanillaFeatureListener implements Listener {
 
     public VanillaFeatureListener(GhastUtils plugin) {
         this.plugin = plugin;
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
-    @EventHandler(
-            priority = EventPriority.HIGH,
-            ignoreCancelled = true
-    )
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemConsume(PlayerItemConsumeEvent event) {
         ItemStack item = event.getItem();
-        if (this.isVanillaDisabled(item)) {
+        if (isVanillaDisabled(item)) {
             event.setCancelled(true);
             Player player = event.getPlayer();
             player.sendMessage("§cThis item cannot be consumed.");
         }
-
     }
 
-    @EventHandler(
-            priority = EventPriority.HIGH,
-            ignoreCancelled = true
-    )
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemUse(PlayerInteractEvent event) {
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             Player player = event.getPlayer();
-            player.setMetadata("lastInteractEvent", new FixedMetadataValue(this.plugin, event));
+            player.setMetadata("lastInteractEvent", new FixedMetadataValue(plugin, event));
             ItemStack item = event.getItem();
-            if (this.isVanillaDisabled(item)) {
+            if (isVanillaDisabled(item)) {
                 event.setUseItemInHand(Result.DENY);
-                if (this.isThrowableItem(item.getType())) {
+                if (isThrowableItem(item.getType())) {
                     event.setCancelled(true);
                 }
             }
         }
-
     }
 
     private boolean isVanillaDisabled(ItemStack item) {
-        if (item != null && item.hasItemMeta()) {
-            ItemMeta meta = item.getItemMeta();
-            if (meta == null) {
-                return false;
-            } else if (NBTUtils.getBoolean(meta, "ghastutils.no_vanilla")) {
-                return true;
-            } else {
-                String customItemId = NBTUtils.getString(meta, "ghastutils.custom_item_id");
-                if (customItemId == null) {
-                    return false;
-                } else {
-                    CustomItem customItem = this.plugin.getCraftingManager().getCustomItem(customItemId);
-                    return customItem != null && customItem.isVanillaFeaturesDisabled();
-                }
-            }
-        } else {
+        if (item == null || !item.hasItemMeta()) {
             return false;
         }
+        
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+        
+        if (NBTUtils.getBoolean(meta, "ghastutils.no_vanilla")) {
+            return true;
+        }
+        
+        String customItemId = NBTUtils.getString(meta, "ghastutils.custom_item_id");
+        if (customItemId == null) {
+            return false;
+        }
+        
+        CustomItem customItem = plugin.getCraftingManager().getCustomItem(customItemId);
+        return customItem != null && customItem.isVanillaFeaturesDisabled();
     }
 
     private boolean isThrowableItem(Material type) {
         String name = type.name();
-        return name.contains("POTION") || name.equals("ENDER_PEARL") || name.equals("EGG") || name.equals("SNOWBALL") || name.equals("SPLASH_POTION") || name.equals("LINGERING_POTION") || name.equals("EXPERIENCE_BOTTLE") || name.equals("TRIDENT");
+        return name.contains("POTION") || name.equals("ENDER_PEARL") || name.equals("EGG") || 
+               name.equals("SNOWBALL") || name.equals("SPLASH_POTION") || name.equals("LINGERING_POTION") || 
+               name.equals("EXPERIENCE_BOTTLE") || name.equals("TRIDENT");
     }
 }

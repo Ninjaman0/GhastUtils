@@ -53,10 +53,10 @@ public class CraftingManager {
             int count = 0;
 
             for(Map.Entry<String, CustomItem> entry : this.customItems.entrySet()) {
-                CustomItem item = (CustomItem)entry.getValue();
+                CustomItem item = entry.getValue();
                 if (!item.getRecipe().isEmpty()) {
                     Map<Integer, ItemStack> recipeItems = this.convertRecipeToItemStacks(item.getRecipe());
-                    if (this.registerRecipe((String)entry.getKey(), recipeItems)) {
+                    if (this.registerRecipe(entry.getKey(), recipeItems)) {
                         ++count;
                     }
                 }
@@ -74,7 +74,6 @@ public class CraftingManager {
                     Bukkit.removeRecipe(shapedRecipe.getKey());
                 }
             }
-
         });
         this.customItems.clear();
         this.customIngredients.clear();
@@ -86,164 +85,127 @@ public class CraftingManager {
     }
 
     public boolean registerRecipe(String itemId, Map<Integer, ItemStack> recipeItems) {
-        if (itemId != null && recipeItems != null) {
-            CustomItem customItem = (CustomItem)this.customItems.get(itemId);
-            if (customItem == null) {
-                return false;
-            } else {
-                ItemStack result = this.createItemStack(itemId, 1);
-                if (result == null) {
-                    return false;
-                } else {
-                    NamespacedKey key = new NamespacedKey(this.plugin, itemId.toLowerCase());
-                    Recipe existingRecipe = Bukkit.getRecipe(key);
-                    if (existingRecipe != null) {
-                        Bukkit.removeRecipe(key);
-                    }
-
-                    ShapedRecipe recipe = new ShapedRecipe(key, result);
-                    String[] shape = new String[3];
-                    Map<Character, ItemStack> ingredients = new HashMap<>();
-                    char currentChar = 'A';
-
-                    for(int i = 0; i < 3; ++i) {
-                        StringBuilder row = new StringBuilder();
-
-                        for(int j = 0; j < 3; ++j) {
-                            int slot = i * 3 + j + 1;
-                            ItemStack item = (ItemStack)recipeItems.get(slot);
-                            if (item != null && item.getType() != Material.AIR) {
-                                row.append(currentChar);
-                                ingredients.put(currentChar, item);
-                                ++currentChar;
-                            } else {
-                                row.append(' ');
-                            }
-                        }
-
-                        shape[i] = row.toString();
-                    }
-
-                    boolean isValidShape = false;
-
-                    for(String row : shape) {
-                        if (!row.trim().isEmpty()) {
-                            isValidShape = true;
-                            break;
-                        }
-                    }
-
-                    if (!isValidShape) {
-                        this.plugin.getLogger().warning("Invalid recipe shape for item " + itemId + " - at least one slot must be filled");
-                        return false;
-                    } else {
-                        recipe.shape(shape);
-
-                        for(Map.Entry<Character, ItemStack> entry : ingredients.entrySet()) {
-                            ItemStack ingredient = (ItemStack)entry.getValue();
-                            String customItemId = this.getCustomItemIdFromItemStack(ingredient);
-
-                            try {
-                                if (customItemId != null) {
-                                    ItemStack customIngredient = this.createItemStack(customItemId, 1);
-                                    if (customIngredient != null) {
-                                        recipe.setIngredient((Character)entry.getKey(), customIngredient.getType());
-                                    }
-                                } else {
-                                    recipe.setIngredient((Character)entry.getKey(), ingredient.getType());
-                                }
-                            } catch (IllegalArgumentException e) {
-                                this.plugin.getLogger().warning("Failed to set ingredient for recipe " + itemId + ": " + e.getMessage());
-                            }
-                        }
-
-                        try {
-                            Bukkit.addRecipe(recipe);
-                        } catch (IllegalStateException e) {
-                            this.plugin.getLogger().warning("Failed to register recipe for " + itemId + ": " + e.getMessage());
-                            return false;
-                        }
-
-                        Map<Integer, RecipeIngredient> recipeData = new HashMap();
-
-                        for(Map.Entry<Integer, ItemStack> entry : recipeItems.entrySet()) {
-                            ItemStack item = (ItemStack)entry.getValue();
-                            if (item != null) {
-                                String customItemId = this.getCustomItemIdFromItemStack(item);
-                                if (customItemId != null) {
-                                    recipeData.put((Integer)entry.getKey(), new RecipeIngredient(customItemId, item.getAmount()));
-                                } else {
-                                    recipeData.put((Integer)entry.getKey(), new RecipeIngredient(item.getType(), item.getAmount()));
-                                }
-                            }
-                        }
-
-                        customItem.setRecipe(recipeData);
-                        this.saveItems();
-                        return true;
-                    }
-                }
-            }
-        } else {
+        if (itemId == null || recipeItems == null) {
             return false;
         }
-    }
+        
+        CustomItem customItem = this.customItems.get(itemId);
+        if (customItem == null) {
+            return false;
+        }
 
-    private boolean verifyRecipeItems(Player player, Map<Integer, RecipeIngredient> recipe) {
-        ItemStack[] matrix = player.getOpenInventory().getTopInventory().getContents();
+        ItemStack result = this.createItemStack(itemId, 1);
+        if (result == null) {
+            return false;
+        }
 
-        for(int slot = 0; slot < 9; ++slot) {
-            int recipeSlot = slot + 1;
-            RecipeIngredient required = (RecipeIngredient)recipe.get(recipeSlot);
-            ItemStack provided = matrix[slot];
-            if (required == null) {
-                if (provided != null && provided.getType() != Material.AIR) {
-                    return false;
-                }
-            } else {
-                if (provided == null || provided.getType() == Material.AIR) {
-                    return false;
-                }
+        NamespacedKey key = new NamespacedKey(this.plugin, itemId.toLowerCase());
+        Recipe existingRecipe = Bukkit.getRecipe(key);
+        if (existingRecipe != null) {
+            Bukkit.removeRecipe(key);
+        }
 
-                if (required.isMaterial()) {
-                    if (provided.getType() != required.getMaterial() || provided.getAmount() < required.getAmount() || this.getCustomItemIdFromItemStack(provided) != null) {
-                        return false;
-                    }
+        ShapedRecipe recipe = new ShapedRecipe(key, result);
+        String[] shape = new String[3];
+        Map<Character, ItemStack> ingredients = new HashMap<>();
+        char currentChar = 'A';
+
+        for(int i = 0; i < 3; ++i) {
+            StringBuilder row = new StringBuilder();
+
+            for(int j = 0; j < 3; ++j) {
+                int slot = i * 3 + j + 1;
+                ItemStack item = recipeItems.get(slot);
+                if (item != null && item.getType() != Material.AIR) {
+                    row.append(currentChar);
+                    ingredients.put(currentChar, item);
+                    ++currentChar;
                 } else {
-                    CustomItem requiredItem = (CustomItem)this.customItems.get(required.getCustomItemId());
-                    if (requiredItem == null || !this.isMatchingCustomItem(provided, requiredItem) || provided.getAmount() < required.getAmount()) {
-                        return false;
-                    }
+                    row.append(' ');
+                }
+            }
+
+            shape[i] = row.toString();
+        }
+
+        boolean isValidShape = false;
+        for(String row : shape) {
+            if (!row.trim().isEmpty()) {
+                isValidShape = true;
+                break;
+            }
+        }
+
+        if (!isValidShape) {
+            this.plugin.getLogger().warning("Invalid recipe shape for item " + itemId + " - at least one slot must be filled");
+            return false;
+        }
+
+        recipe.shape(shape);
+
+        for(Map.Entry<Character, ItemStack> entry : ingredients.entrySet()) {
+            ItemStack ingredient = entry.getValue();
+            try {
+                recipe.setIngredient(entry.getKey(), ingredient.getType());
+            } catch (IllegalArgumentException e) {
+                this.plugin.getLogger().warning("Failed to set ingredient for recipe " + itemId + ": " + e.getMessage());
+            }
+        }
+
+        try {
+            Bukkit.addRecipe(recipe);
+        } catch (IllegalStateException e) {
+            this.plugin.getLogger().warning("Failed to register recipe for " + itemId + ": " + e.getMessage());
+            return false;
+        }
+
+        Map<Integer, RecipeIngredient> recipeData = new HashMap<>();
+        for(Map.Entry<Integer, ItemStack> entry : recipeItems.entrySet()) {
+            ItemStack item = entry.getValue();
+            if (item != null) {
+                String customItemId = this.getCustomItemIdFromItemStack(item);
+                String ingredientId = this.getCustomIngredientIdFromItemStack(item);
+                
+                if (customItemId != null) {
+                    recipeData.put(entry.getKey(), new RecipeIngredient(customItemId, item.getAmount(), false));
+                } else if (ingredientId != null) {
+                    recipeData.put(entry.getKey(), new RecipeIngredient(ingredientId, item.getAmount(), true));
+                } else {
+                    recipeData.put(entry.getKey(), new RecipeIngredient(item.getType(), item.getAmount()));
                 }
             }
         }
 
+        customItem.setRecipe(recipeData);
+        this.saveItems();
         return true;
     }
 
     private Map<Integer, ItemStack> convertRecipeToItemStacks(Map<Integer, RecipeIngredient> recipe) {
-        Map<Integer, ItemStack> items = new HashMap();
+        Map<Integer, ItemStack> items = new HashMap<>();
         if (recipe == null) {
             return items;
-        } else {
-            for(Map.Entry<Integer, RecipeIngredient> entry : recipe.entrySet()) {
-                RecipeIngredient ingredient = (RecipeIngredient)entry.getValue();
-                if (ingredient != null) {
-                    ItemStack item;
-                    if (ingredient.isMaterial()) {
-                        item = new ItemStack(ingredient.getMaterial(), ingredient.getAmount());
-                    } else {
-                        item = this.createItemStack(ingredient.getCustomItemId(), ingredient.getAmount());
-                    }
+        }
 
-                    if (item != null) {
-                        items.put((Integer)entry.getKey(), item);
-                    }
+        for(Map.Entry<Integer, RecipeIngredient> entry : recipe.entrySet()) {
+            RecipeIngredient ingredient = entry.getValue();
+            if (ingredient != null) {
+                ItemStack item;
+                if (ingredient.isMaterial()) {
+                    item = new ItemStack(ingredient.getMaterial(), ingredient.getAmount());
+                } else if (ingredient.isCustomIngredient()) {
+                    item = this.createIngredientItemStack(ingredient.getCustomItemId(), ingredient.getAmount());
+                } else {
+                    item = this.createItemStack(ingredient.getCustomItemId(), ingredient.getAmount());
+                }
+
+                if (item != null) {
+                    items.put(entry.getKey(), item);
                 }
             }
-
-            return items;
         }
+
+        return items;
     }
 
     private void loadCustomIngredients() {
@@ -293,7 +255,6 @@ public class CraftingManager {
 
         for (String itemId : craftingConfig.getKeys(false)) {
             try {
-                // Skip the ingredients section if present
                 if (itemId.equals("ingredients")) {
                     continue;
                 }
@@ -304,7 +265,6 @@ public class CraftingManager {
                     continue;
                 }
 
-                // Validate required fields
                 if (!itemSection.contains("material")) {
                     this.plugin.getLogger().warning("Missing required 'material' field for item " + itemId);
                     continue;
@@ -316,7 +276,6 @@ public class CraftingManager {
                     continue;
                 }
 
-                // Load material with proper error handling
                 Material material;
                 try {
                     material = Material.valueOf(materialString.toUpperCase());
@@ -336,12 +295,10 @@ public class CraftingManager {
                 customItem.setGlow(glow);
                 customItem.setVanillaFeaturesDisabled(noVanilla);
 
-                // Handle custom model data
                 if (itemSection.contains("custom_model_data")) {
                     customItem.setCustomModelData(itemSection.getInt("custom_model_data"));
                 }
 
-                // Handle item flags
                 if (itemSection.contains("flags")) {
                     ConfigurationSection flagsSection = itemSection.getConfigurationSection("flags");
                     if (flagsSection != null) {
@@ -358,7 +315,6 @@ public class CraftingManager {
                     }
                 }
 
-                // Load recipe if present
                 if (itemSection.contains("recipe")) {
                     ConfigurationSection recipeSection = itemSection.getConfigurationSection("recipe");
                     if (recipeSection != null) {
@@ -377,15 +333,17 @@ public class CraftingManager {
                                 int amount = parts.length > 1 ? Integer.parseInt(parts[1]) : 1;
 
                                 RecipeIngredient ingredient;
-                                try {
-                                    // Try to parse as material first
-                                    Material ingredientMaterial = Material.valueOf(ingredientId.toUpperCase());
-                                    ingredient = new RecipeIngredient(ingredientMaterial, amount);
-                                } catch (IllegalArgumentException e) {
-                                    // Check if it's a custom ingredient
-                                    if (this.customIngredients.containsKey(ingredientId)) {
-                                        ingredient = new RecipeIngredient(ingredientId, amount, true);
-                                    } else {
+                                
+                                // Check if it's a custom ingredient first
+                                if (this.customIngredients.containsKey(ingredientId)) {
+                                    ingredient = new RecipeIngredient(ingredientId, amount, true);
+                                } else {
+                                    try {
+                                        // Try to parse as material
+                                        Material ingredientMaterial = Material.valueOf(ingredientId.toUpperCase());
+                                        ingredient = new RecipeIngredient(ingredientMaterial, amount);
+                                    } catch (IllegalArgumentException e) {
+                                        // Must be a custom item
                                         ingredient = new RecipeIngredient(ingredientId, amount, false);
                                     }
                                 }
@@ -400,7 +358,6 @@ public class CraftingManager {
                     }
                 }
 
-                // Load effects if present
                 if (itemSection.contains("effects")) {
                     ConfigurationSection effectsSection = itemSection.getConfigurationSection("effects");
                     if (effectsSection != null) {
@@ -464,7 +421,7 @@ public class CraftingManager {
 
             if (!item.getRecipe().isEmpty()) {
                 for(Map.Entry<Integer, RecipeIngredient> entry : item.getRecipe().entrySet()) {
-                    RecipeIngredient ingredient = (RecipeIngredient)entry.getValue();
+                    RecipeIngredient ingredient = entry.getValue();
                     String ingredientString;
                     if (ingredient.isMaterial()) {
                         ingredientString = ingredient.getMaterial().toString() + ":" + ingredient.getAmount();
@@ -477,7 +434,7 @@ public class CraftingManager {
 
             if (!item.getEffects().isEmpty()) {
                 for(Map.Entry<String, List<String>> entry : item.getEffects().entrySet()) {
-                    craftingConfig.set(itemId + ".effects." + (String)entry.getKey(), entry.getValue());
+                    craftingConfig.set(itemId + ".effects." + entry.getKey(), entry.getValue());
                 }
             }
         }
@@ -509,19 +466,17 @@ public class CraftingManager {
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(logFile, true))) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String var10001 = dateFormat.format(new Date());
-            writer.println("[" + var10001 + "] " + message);
+            writer.println("[" + dateFormat.format(new Date()) + "] " + message);
         } catch (IOException e) {
             this.plugin.getLogger().log(Level.WARNING, "Failed to write to crafting log", e);
         }
-
     }
 
     public void registerItem(String itemId, ItemStack item) {
         if (itemId != null && item != null) {
             ItemMeta meta = item.getItemMeta();
             String itemName = meta != null && meta.hasDisplayName() ? meta.getDisplayName() : itemId;
-            List<String> lore = (List<String>)(meta != null && meta.hasLore() ? meta.getLore() : new ArrayList());
+            List<String> lore = meta != null && meta.hasLore() ? meta.getLore() : new ArrayList<>();
             CustomItem customItem = new CustomItem(itemId, itemName, item.getType(), lore);
             if (meta != null && ItemUtils.hasCustomModelData(meta)) {
                 customItem.setCustomModelData(ItemUtils.getCustomModelData(meta));
@@ -542,200 +497,244 @@ public class CraftingManager {
     }
 
     public boolean setRecipe(String itemId, Map<Integer, ItemStack> recipeItems) {
-        if (itemId != null && recipeItems != null) {
-            CustomItem customItem = (CustomItem)this.customItems.get(itemId);
-            if (customItem == null) {
-                return false;
-            } else {
-                Map<Integer, RecipeIngredient> recipe = new HashMap();
-
-                for(Map.Entry<Integer, ItemStack> entry : recipeItems.entrySet()) {
-                    ItemStack itemStack = (ItemStack)entry.getValue();
-                    if (itemStack != null) {
-                        String customItemId = this.getCustomItemIdFromItemStack(itemStack);
-                        RecipeIngredient ingredient;
-                        if (customItemId != null) {
-                            ingredient = new RecipeIngredient(customItemId, itemStack.getAmount(), false);
-                        } else {
-                            ingredient = new RecipeIngredient(itemStack.getType(), itemStack.getAmount());
-                        }
-                        recipe.put((Integer)entry.getKey(), ingredient);
-                    }
-                }
-
-                if (this.hasCircularDependency(itemId, recipe)) {
-                    return false;
-                } else {
-                    customItem.setRecipe(recipe);
-                    this.saveItems();
-                    this.logCraftingChanges("Updated recipe for item: " + itemId);
-                    return this.registerRecipe(itemId, recipeItems);
-                }
-            }
-        } else {
+        if (itemId == null || recipeItems == null) {
             return false;
         }
+        
+        CustomItem customItem = this.customItems.get(itemId);
+        if (customItem == null) {
+            return false;
+        }
+
+        Map<Integer, RecipeIngredient> recipe = new HashMap<>();
+
+        for(Map.Entry<Integer, ItemStack> entry : recipeItems.entrySet()) {
+            ItemStack itemStack = entry.getValue();
+            if (itemStack != null) {
+                String customItemId = this.getCustomItemIdFromItemStack(itemStack);
+                String ingredientId = this.getCustomIngredientIdFromItemStack(itemStack);
+                
+                RecipeIngredient ingredient;
+                if (customItemId != null) {
+                    ingredient = new RecipeIngredient(customItemId, itemStack.getAmount(), false);
+                } else if (ingredientId != null) {
+                    ingredient = new RecipeIngredient(ingredientId, itemStack.getAmount(), true);
+                } else {
+                    ingredient = new RecipeIngredient(itemStack.getType(), itemStack.getAmount());
+                }
+                recipe.put(entry.getKey(), ingredient);
+            }
+        }
+
+        if (this.hasCircularDependency(itemId, recipe)) {
+            return false;
+        }
+
+        customItem.setRecipe(recipe);
+        this.saveItems();
+        this.logCraftingChanges("Updated recipe for item: " + itemId);
+        return this.registerRecipe(itemId, recipeItems);
     }
 
     private boolean hasCircularDependency(String itemId, Map<Integer, RecipeIngredient> recipe) {
-        Set<String> visited = new HashSet();
+        Set<String> visited = new HashSet<>();
         return this.checkCircularDependencyRecursive(itemId, recipe, visited);
     }
 
     private boolean checkCircularDependencyRecursive(String itemId, Map<Integer, RecipeIngredient> recipe, Set<String> visited) {
         if (visited.contains(itemId)) {
             return true;
-        } else {
-            visited.add(itemId);
+        }
+        
+        visited.add(itemId);
 
-            for(RecipeIngredient ingredient : recipe.values()) {
-                if (!ingredient.isMaterial()) {
-                    String ingredientId = ingredient.getCustomItemId();
-                    if (ingredient.isCustomIngredient()) {
-                        // Custom ingredients don't have recipes, so no circular dependency
-                        continue;
-                    } else {
-                        CustomItem ingredientItem = (CustomItem)this.customItems.get(ingredientId);
-                        if (ingredientItem != null && this.checkCircularDependencyRecursive(ingredientId, ingredientItem.getRecipe(), new HashSet(visited))) {
-                            return true;
-                        }
+        for(RecipeIngredient ingredient : recipe.values()) {
+            if (!ingredient.isMaterial()) {
+                String ingredientId = ingredient.getCustomItemId();
+                if (ingredient.isCustomIngredient()) {
+                    // Custom ingredients don't have recipes, so no circular dependency
+                    continue;
+                } else {
+                    CustomItem ingredientItem = this.customItems.get(ingredientId);
+                    if (ingredientItem != null && this.checkCircularDependencyRecursive(ingredientId, ingredientItem.getRecipe(), new HashSet<>(visited))) {
+                        return true;
                     }
                 }
             }
-
-            return false;
         }
+
+        return false;
     }
 
     private boolean isMatchingCustomItem(ItemStack itemStack, CustomItem customItem) {
-        if (itemStack != null && itemStack.hasItemMeta()) {
-            ItemMeta meta = itemStack.getItemMeta();
-            if (meta == null) {
-                return false;
-            } else if (itemStack.getType() != customItem.getMaterial()) {
-                return false;
-            } else {
-                String displayName = meta.getDisplayName();
-                String expectedName = MessageUtils.translateItemColors(customItem.getName());
-                if (!expectedName.equals(displayName)) {
-                    return false;
-                } else {
-                    List<String> lore = (List<String>)(meta.getLore() != null ? meta.getLore() : new ArrayList());
-                    List<String> expectedLore = MessageUtils.translateItemColors(customItem.getLore());
-                    if (lore.size() != expectedLore.size()) {
-                        return false;
-                    } else {
-                        for(int i = 0; i < lore.size(); ++i) {
-                            if (!((String)lore.get(i)).equals(expectedLore.get(i))) {
-                                return false;
-                            }
-                        }
-
-                        if (customItem.getCustomModelData() == -1 || ItemUtils.hasCustomModelData(meta) && ItemUtils.getCustomModelData(meta) == customItem.getCustomModelData()) {
-                            String nbtId = NBTUtils.getString(meta, "ghastutils.custom_item_id");
-                            return nbtId == null || nbtId.equals(customItem.getId());
-                        } else {
-                            return false;
-                        }
-                    }
-                }
-            }
-        } else {
+        if (itemStack == null || !itemStack.hasItemMeta()) {
             return false;
         }
+        
+        ItemMeta meta = itemStack.getItemMeta();
+        if (meta == null || itemStack.getType() != customItem.getMaterial()) {
+            return false;
+        }
+
+        String displayName = meta.getDisplayName();
+        String expectedName = MessageUtils.translateItemColors(customItem.getName());
+        if (!expectedName.equals(displayName)) {
+            return false;
+        }
+
+        List<String> lore = meta.getLore() != null ? meta.getLore() : new ArrayList<>();
+        List<String> expectedLore = MessageUtils.translateItemColors(customItem.getLore());
+        if (lore.size() != expectedLore.size()) {
+            return false;
+        }
+
+        for(int i = 0; i < lore.size(); ++i) {
+            if (!lore.get(i).equals(expectedLore.get(i))) {
+                return false;
+            }
+        }
+
+        if (customItem.getCustomModelData() != -1) {
+            if (!ItemUtils.hasCustomModelData(meta) || ItemUtils.getCustomModelData(meta) != customItem.getCustomModelData()) {
+                return false;
+            }
+        }
+
+        String nbtId = NBTUtils.getString(meta, "ghastutils.custom_item_id");
+        return nbtId == null || nbtId.equals(customItem.getId());
     }
 
     public ItemStack createItemStack(String itemId, int amount) {
         if (itemId == null) {
             return null;
-        } else {
-            CustomItem customItem = (CustomItem)this.customItems.get(itemId);
-            if (customItem == null) {
-                return null;
-            } else {
-                try {
-                    ItemStack itemStack = new ItemStack(customItem.getMaterial(), amount);
-                    ItemMeta meta = itemStack.getItemMeta();
-                    if (meta != null) {
-                        meta.setDisplayName(MessageUtils.translateItemColors(customItem.getName()));
-                        meta.setLore(MessageUtils.translateItemColors(customItem.getLore()));
-                        if (customItem.getCustomModelData() != -1) {
-                            ItemUtils.setCustomModelData(meta, customItem.getCustomModelData());
-                        }
+        }
+        
+        CustomItem customItem = this.customItems.get(itemId);
+        if (customItem == null) {
+            return null;
+        }
 
-                        for(ItemFlag flag : customItem.getFlags()) {
-                            meta.addItemFlags(new ItemFlag[]{flag});
-                        }
-
-                        NBTUtils.setString(meta, "ghastutils.custom_item_id", itemId);
-                        if (customItem.isVanillaFeaturesDisabled()) {
-                            NBTUtils.setBoolean(meta, "ghastutils.no_vanilla", true);
-                        }
-
-                        List<String> lore = (List<String>)(meta.getLore() != null ? meta.getLore() : new ArrayList());
-                        if (lore.stream().noneMatch((line) -> line.equals("§8ID: " + itemId))) {
-                            lore.add("§8ID: " + itemId);
-                            meta.setLore(lore);
-                        }
-
-                        itemStack.setItemMeta(meta);
-                    }
-
-                    if (customItem.isGlow()) {
-                        ItemUtils.addGlow(itemStack);
-                    }
-
-                    return itemStack;
-                } catch (IllegalArgumentException e) {
-                    this.plugin.getLogger().warning("Failed to create item stack for " + itemId + ": " + e.getMessage());
-                    return null;
+        try {
+            ItemStack itemStack = new ItemStack(customItem.getMaterial(), amount);
+            ItemMeta meta = itemStack.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName(MessageUtils.translateItemColors(customItem.getName()));
+                meta.setLore(MessageUtils.translateItemColors(customItem.getLore()));
+                if (customItem.getCustomModelData() != -1) {
+                    ItemUtils.setCustomModelData(meta, customItem.getCustomModelData());
                 }
+
+                for(ItemFlag flag : customItem.getFlags()) {
+                    meta.addItemFlags(flag);
+                }
+
+                NBTUtils.setString(meta, "ghastutils.custom_item_id", itemId);
+                if (customItem.isVanillaFeaturesDisabled()) {
+                    NBTUtils.setBoolean(meta, "ghastutils.no_vanilla", true);
+                }
+
+                List<String> lore = meta.getLore() != null ? meta.getLore() : new ArrayList<>();
+                if (lore.stream().noneMatch(line -> line.equals("§8ID: " + itemId))) {
+                    lore.add("§8ID: " + itemId);
+                    meta.setLore(lore);
+                }
+
+                itemStack.setItemMeta(meta);
             }
+
+            if (customItem.isGlow()) {
+                ItemUtils.addGlow(itemStack);
+            }
+
+            return itemStack;
+        } catch (IllegalArgumentException e) {
+            this.plugin.getLogger().warning("Failed to create item stack for " + itemId + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    public ItemStack createIngredientItemStack(String ingredientId, int amount) {
+        CustomIngredient ingredient = this.customIngredients.get(ingredientId);
+        if (ingredient == null) {
+            return null;
+        }
+
+        try {
+            ItemStack itemStack = new ItemStack(ingredient.getMaterial(), amount);
+            ItemMeta meta = itemStack.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName(MessageUtils.translateItemColors(ingredient.getName()));
+                meta.setLore(MessageUtils.translateItemColors(ingredient.getLore()));
+                
+                if (ingredient.getCustomModelData() != -1) {
+                    ItemUtils.setCustomModelData(meta, ingredient.getCustomModelData());
+                }
+
+                NBTUtils.setString(meta, "ghastutils.custom_ingredient_id", ingredientId);
+                itemStack.setItemMeta(meta);
+            }
+
+            return itemStack;
+        } catch (IllegalArgumentException e) {
+            this.plugin.getLogger().warning("Failed to create ingredient item stack for " + ingredientId + ": " + e.getMessage());
+            return null;
         }
     }
 
     public boolean hasRequiredMaterials(Player player, String itemId) {
-        CustomItem customItem = (CustomItem)this.customItems.get(itemId);
-        if (customItem != null && !customItem.getRecipe().isEmpty()) {
-            Map<Material, Integer> requiredMaterials = new HashMap();
-            Map<String, Integer> requiredCustomItems = new HashMap();
-
-            for(RecipeIngredient ingredient : customItem.getRecipe().values()) {
-                if (ingredient.isMaterial()) {
-                    Material material = ingredient.getMaterial();
-                    requiredMaterials.put(material, (Integer)requiredMaterials.getOrDefault(material, 0) + ingredient.getAmount());
-                } else if (ingredient.isCustomIngredient()) {
-                    String ingredientId = ingredient.getCustomItemId();
-                    requiredCustomItems.put(ingredientId, (Integer)requiredCustomItems.getOrDefault(ingredientId, 0) + ingredient.getAmount());
-                } else {
-                    String customItemId = ingredient.getCustomItemId();
-                    requiredCustomItems.put(customItemId, (Integer)requiredCustomItems.getOrDefault(customItemId, 0) + ingredient.getAmount());
-                }
-            }
-
-            for(Map.Entry<Material, Integer> entry : requiredMaterials.entrySet()) {
-                if (!this.hasEnoughMaterial(player, (Material)entry.getKey(), (Integer)entry.getValue())) {
-                    return false;
-                }
-            }
-
-            for(Map.Entry<String, Integer> entry : requiredCustomItems.entrySet()) {
-                if (!this.hasEnoughCustomItem(player, (String)entry.getKey(), (Integer)entry.getValue())) {
-                    return false;
-                }
-            }
-
-            return true;
-        } else {
+        CustomItem customItem = this.customItems.get(itemId);
+        if (customItem == null || customItem.getRecipe().isEmpty()) {
             return false;
         }
+
+        Map<Material, Integer> requiredMaterials = new HashMap<>();
+        Map<String, Integer> requiredCustomItems = new HashMap<>();
+        Map<String, Integer> requiredIngredients = new HashMap<>();
+
+        for(RecipeIngredient ingredient : customItem.getRecipe().values()) {
+            if (ingredient.isMaterial()) {
+                Material material = ingredient.getMaterial();
+                requiredMaterials.put(material, requiredMaterials.getOrDefault(material, 0) + ingredient.getAmount());
+            } else if (ingredient.isCustomIngredient()) {
+                String ingredientId = ingredient.getCustomItemId();
+                requiredIngredients.put(ingredientId, requiredIngredients.getOrDefault(ingredientId, 0) + ingredient.getAmount());
+            } else {
+                String customItemId = ingredient.getCustomItemId();
+                requiredCustomItems.put(customItemId, requiredCustomItems.getOrDefault(customItemId, 0) + ingredient.getAmount());
+            }
+        }
+
+        // Check materials
+        for(Map.Entry<Material, Integer> entry : requiredMaterials.entrySet()) {
+            if (!this.hasEnoughMaterial(player, entry.getKey(), entry.getValue())) {
+                return false;
+            }
+        }
+
+        // Check custom items
+        for(Map.Entry<String, Integer> entry : requiredCustomItems.entrySet()) {
+            if (!this.hasEnoughCustomItem(player, entry.getKey(), entry.getValue())) {
+                return false;
+            }
+        }
+
+        // Check custom ingredients
+        for(Map.Entry<String, Integer> entry : requiredIngredients.entrySet()) {
+            if (!this.hasEnoughCustomIngredient(player, entry.getKey(), entry.getValue())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private boolean hasEnoughMaterial(Player player, Material material, int amount) {
         int count = 0;
 
         for(ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material && this.getCustomItemIdFromItemStack(item) == null) {
+            if (item != null && item.getType() == material && 
+                this.getCustomItemIdFromItemStack(item) == null && 
+                this.getCustomIngredientIdFromItemStack(item) == null) {
                 count += item.getAmount();
             }
         }
@@ -749,11 +748,22 @@ public class CraftingManager {
         for(ItemStack item : player.getInventory().getContents()) {
             if (item != null) {
                 String customItemId = this.getCustomItemIdFromItemStack(item);
-                String ingredientId = this.getCustomIngredientIdFromItemStack(item);
-
                 if (customItemId != null && customItemId.equals(itemId)) {
                     count += item.getAmount();
-                } else if (ingredientId != null && ingredientId.equals(itemId)) {
+                }
+            }
+        }
+
+        return count >= amount;
+    }
+
+    private boolean hasEnoughCustomIngredient(Player player, String ingredientId, int amount) {
+        int count = 0;
+
+        for(ItemStack item : player.getInventory().getContents()) {
+            if (item != null) {
+                String customIngredientId = this.getCustomIngredientIdFromItemStack(item);
+                if (customIngredientId != null && customIngredientId.equals(ingredientId)) {
                     count += item.getAmount();
                 }
             }
@@ -832,70 +842,56 @@ public class CraftingManager {
     }
 
     public boolean craftItem(Player player, String itemId) {
-        CustomItem customItem = (CustomItem)this.customItems.get(itemId);
-        if (customItem != null && !customItem.getRecipe().isEmpty()) {
-            if (customItem.getPermission() != null && !player.hasPermission(customItem.getPermission())) {
-                return false;
-            } else if (!this.verifyRecipeItems(player, customItem.getRecipe())) {
-                return false;
-            } else if (player.getInventory().firstEmpty() == -1) {
-                return false;
-            } else {
-                this.removeCraftingItems(player, customItem.getRecipe());
-                ItemStack craftedItem = this.createItemStack(itemId, 1);
-                player.getInventory().addItem(new ItemStack[]{craftedItem});
-                return true;
-            }
-        } else {
+        CustomItem customItem = this.customItems.get(itemId);
+        if (customItem == null || customItem.getRecipe().isEmpty()) {
             return false;
         }
-    }
 
-    private void removeCraftingItems(Player player, Map<Integer, RecipeIngredient> recipe) {
-        ItemStack[] matrix = player.getOpenInventory().getTopInventory().getContents();
-
-        for(int slot = 0; slot < 9; ++slot) {
-            int recipeSlot = slot + 1;
-            RecipeIngredient required = (RecipeIngredient)recipe.get(recipeSlot);
-            if (required != null && required.getAmount() > 0) {
-                ItemStack item = matrix[slot];
-                if (item != null) {
-                    int newAmount = item.getAmount() - required.getAmount();
-                    if (newAmount <= 0) {
-                        matrix[slot] = null;
-                    } else {
-                        item.setAmount(newAmount);
-                    }
-                }
-            }
+        if (customItem.getPermission() != null && !player.hasPermission(customItem.getPermission())) {
+            return false;
         }
 
-        player.getOpenInventory().getTopInventory().setContents(matrix);
+        if (!this.hasRequiredMaterials(player, itemId)) {
+            return false;
+        }
+
+        if (player.getInventory().firstEmpty() == -1) {
+            return false;
+        }
+
+        this.removeRequiredMaterials(player, customItem.getRecipe());
+        ItemStack craftedItem = this.createItemStack(itemId, 1);
+        player.getInventory().addItem(craftedItem);
+        return true;
     }
 
     private void removeRequiredMaterials(Player player, Map<Integer, RecipeIngredient> recipe) {
-        Map<Material, Integer> materialsToRemove = new HashMap();
-        Map<String, Integer> customItemsToRemove = new HashMap();
+        Map<Material, Integer> materialsToRemove = new HashMap<>();
+        Map<String, Integer> customItemsToRemove = new HashMap<>();
+        Map<String, Integer> ingredientsToRemove = new HashMap<>();
 
         for(RecipeIngredient ingredient : recipe.values()) {
             if (ingredient.isMaterial()) {
                 Material material = ingredient.getMaterial();
-                materialsToRemove.put(material, (Integer)materialsToRemove.getOrDefault(material, 0) + ingredient.getAmount());
+                materialsToRemove.put(material, materialsToRemove.getOrDefault(material, 0) + ingredient.getAmount());
             } else if (ingredient.isCustomIngredient()) {
                 String ingredientId = ingredient.getCustomItemId();
-                customItemsToRemove.put(ingredientId, (Integer)customItemsToRemove.getOrDefault(ingredientId, 0) + ingredient.getAmount());
+                ingredientsToRemove.put(ingredientId, ingredientsToRemove.getOrDefault(ingredientId, 0) + ingredient.getAmount());
             } else {
                 String customItemId = ingredient.getCustomItemId();
-                customItemsToRemove.put(customItemId, (Integer)customItemsToRemove.getOrDefault(customItemId, 0) + ingredient.getAmount());
+                customItemsToRemove.put(customItemId, customItemsToRemove.getOrDefault(customItemId, 0) + ingredient.getAmount());
             }
         }
 
+        // Remove materials
         for(Map.Entry<Material, Integer> entry : materialsToRemove.entrySet()) {
-            Material material = (Material)entry.getKey();
-            int amountToRemove = (Integer)entry.getValue();
+            Material material = entry.getKey();
+            int amountToRemove = entry.getValue();
 
             for(ItemStack item : player.getInventory().getContents()) {
-                if (item != null && item.getType() == material && this.getCustomItemIdFromItemStack(item) == null) {
+                if (item != null && item.getType() == material && 
+                    this.getCustomItemIdFromItemStack(item) == null &&
+                    this.getCustomIngredientIdFromItemStack(item) == null) {
                     int amountInStack = item.getAmount();
                     if (amountInStack <= amountToRemove) {
                         amountToRemove -= amountInStack;
@@ -912,17 +908,15 @@ public class CraftingManager {
             }
         }
 
+        // Remove custom items
         for(Map.Entry<String, Integer> entry : customItemsToRemove.entrySet()) {
-            String customItemId = (String)entry.getKey();
-            int amountToRemove = (Integer)entry.getValue();
+            String customItemId = entry.getKey();
+            int amountToRemove = entry.getValue();
 
             for(ItemStack item : player.getInventory().getContents()) {
                 if (item != null) {
                     String itemId = this.getCustomItemIdFromItemStack(item);
-                    String ingredientId = this.getCustomIngredientIdFromItemStack(item);
-
-                    if ((itemId != null && itemId.equals(customItemId)) ||
-                            (ingredientId != null && ingredientId.equals(customItemId))) {
+                    if (itemId != null && itemId.equals(customItemId)) {
                         int amountInStack = item.getAmount();
                         if (amountInStack <= amountToRemove) {
                             amountToRemove -= amountInStack;
@@ -940,14 +934,39 @@ public class CraftingManager {
             }
         }
 
+        // Remove custom ingredients
+        for(Map.Entry<String, Integer> entry : ingredientsToRemove.entrySet()) {
+            String ingredientId = entry.getKey();
+            int amountToRemove = entry.getValue();
+
+            for(ItemStack item : player.getInventory().getContents()) {
+                if (item != null) {
+                    String itemIngredientId = this.getCustomIngredientIdFromItemStack(item);
+                    if (itemIngredientId != null && itemIngredientId.equals(ingredientId)) {
+                        int amountInStack = item.getAmount();
+                        if (amountInStack <= amountToRemove) {
+                            amountToRemove -= amountInStack;
+                            item.setAmount(0);
+                        } else {
+                            item.setAmount(amountInStack - amountToRemove);
+                            amountToRemove = 0;
+                        }
+
+                        if (amountToRemove == 0) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public CustomItem getCustomItem(String id) {
-        return (CustomItem)this.customItems.get(id);
+        return this.customItems.get(id);
     }
 
     public Map<String, CustomItem> getCustomItems() {
-        return new HashMap(this.customItems);
+        return new HashMap<>(this.customItems);
     }
 
     public Map<String, CustomIngredient> getCustomIngredients() {
@@ -965,7 +984,7 @@ public class CraftingManager {
     }
 
     public CraftingSession getCraftingSession(Player player) {
-        return (CraftingSession)this.craftingSessions.get(player);
+        return this.craftingSessions.get(player);
     }
 
     public void endCraftingSession(Player player) {
@@ -973,65 +992,67 @@ public class CraftingManager {
     }
 
     public String getRecipeCostFormatted(String itemId) {
-        CustomItem item = (CustomItem)this.customItems.get(itemId);
-        if (item != null && !item.getRecipe().isEmpty()) {
-            Map<String, Integer> ingredients = new HashMap();
-
-            for(RecipeIngredient ingredient : item.getRecipe().values()) {
-                String name;
-                if (ingredient.isMaterial()) {
-                    name = ingredient.getMaterial().toString();
-                } else if (ingredient.isCustomIngredient()) {
-                    CustomIngredient customIngredient = this.customIngredients.get(ingredient.getCustomItemId());
-                    name = customIngredient != null ? customIngredient.getName() : ingredient.getCustomItemId();
-                } else {
-                    name = ingredient.getCustomItemId();
-                }
-
-                ingredients.put(name, (Integer)ingredients.getOrDefault(name, 0) + ingredient.getAmount());
-            }
-
-            StringBuilder sb = new StringBuilder();
-            boolean first = true;
-
-            for(Map.Entry<String, Integer> entry : ingredients.entrySet()) {
-                if (!first) {
-                    sb.append(", ");
-                }
-
-                sb.append(entry.getValue()).append("x ").append((String)entry.getKey());
-                first = false;
-            }
-
-            return sb.toString();
-        } else {
+        CustomItem item = this.customItems.get(itemId);
+        if (item == null || item.getRecipe().isEmpty()) {
             return "No recipe";
         }
+
+        Map<String, Integer> ingredients = new HashMap<>();
+
+        for(RecipeIngredient ingredient : item.getRecipe().values()) {
+            String name;
+            if (ingredient.isMaterial()) {
+                name = ingredient.getMaterial().toString();
+            } else if (ingredient.isCustomIngredient()) {
+                CustomIngredient customIngredient = this.customIngredients.get(ingredient.getCustomItemId());
+                name = customIngredient != null ? customIngredient.getName() : ingredient.getCustomItemId();
+            } else {
+                name = ingredient.getCustomItemId();
+            }
+
+            ingredients.put(name, ingredients.getOrDefault(name, 0) + ingredient.getAmount());
+        }
+
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+
+        for(Map.Entry<String, Integer> entry : ingredients.entrySet()) {
+            if (!first) {
+                sb.append(", ");
+            }
+
+            sb.append(entry.getValue()).append("x ").append(entry.getKey());
+            first = false;
+        }
+
+        return sb.toString();
     }
 
     public void executeItemEffects(Player player, ItemStack item, String action) {
         String itemId = this.getCustomItemIdFromItemStack(item);
-        if (itemId != null) {
-            CustomItem customItem = (CustomItem)this.customItems.get(itemId);
-            if (customItem != null) {
-                if (customItem.isVanillaFeaturesDisabled() && (action.equals("RIGHT_CLICK") || action.equals("RIGHT_CLICK_AIR") || action.equals("RIGHT_CLICK_BLOCK"))) {
-                    ItemMeta meta = item.getItemMeta();
-                    if (meta != null && NBTUtils.getBoolean(meta, "ghastutils.no_vanilla") && player.hasMetadata("lastInteractEvent")) {
-                        Object obj = ((MetadataValue)player.getMetadata("lastInteractEvent").get(0)).value();
-                        if (obj instanceof PlayerInteractEvent) {
-                            PlayerInteractEvent event = (PlayerInteractEvent)obj;
-                            event.setUseItemInHand(Result.DENY);
-                        }
-                    }
-                }
+        if (itemId == null) {
+            return;
+        }
+        
+        CustomItem customItem = this.customItems.get(itemId);
+        if (customItem == null) {
+            return;
+        }
 
-                List<String> commands = (List)customItem.getEffects().get(action);
-                if (commands != null && !commands.isEmpty()) {
-                    for(String cmd : commands) {
-                        this.executeCommand(player, cmd);
-                    }
-
+        if (customItem.isVanillaFeaturesDisabled() && (action.equals("RIGHT_CLICK") || action.equals("RIGHT_CLICK_AIR") || action.equals("RIGHT_CLICK_BLOCK"))) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null && NBTUtils.getBoolean(meta, "ghastutils.no_vanilla") && player.hasMetadata("lastInteractEvent")) {
+                Object obj = player.getMetadata("lastInteractEvent").get(0).value();
+                if (obj instanceof PlayerInteractEvent event) {
+                    event.setUseItemInHand(Result.DENY);
                 }
+            }
+        }
+
+        List<String> commands = customItem.getEffects().get(action);
+        if (commands != null && !commands.isEmpty()) {
+            for(String cmd : commands) {
+                this.executeCommand(player, cmd);
             }
         }
     }
@@ -1050,7 +1071,6 @@ public class CraftingManager {
                     break;
                 case "op":
                     boolean wasOp = player.isOp();
-
                     try {
                         player.setOp(true);
                         player.performCommand(cmd);
@@ -1058,10 +1078,9 @@ public class CraftingManager {
                         if (!wasOp) {
                             player.setOp(false);
                         }
-
                     }
+                    break;
             }
-
         }
     }
 
@@ -1112,5 +1131,4 @@ public class CraftingManager {
         public List<String> getLore() { return new ArrayList<>(lore); }
         public int getCustomModelData() { return customModelData; }
     }
-
 }
