@@ -51,7 +51,7 @@ public class CompactorGui {
         // Set selection slots
         for (int slot : SELECTION_SLOTS) {
             inventory.setItem(slot, createGuiItem(Material.GRAY_STAINED_GLASS_PANE, 
-                "§7Click to select an item", "§7Hold the item you want to select", "§7and click this slot"));
+                "§7Click to select an item", "§7Select a craftable item from your inventory"));
         }
 
         // Add control buttons
@@ -61,7 +61,7 @@ public class CompactorGui {
             "§7Click to stop auto-crafting"));
         inventory.setItem(39, createGuiItem(Material.PAPER, "§e§lInfo", 
             "§7Select up to 5 items to auto-craft", "§7The compactor will automatically craft", 
-            "§7these items when you have materials", "§7Hold an item and click a selection slot"));
+            "§7these items when you have materials"));
 
         updateDisplay();
     }
@@ -94,7 +94,7 @@ public class CompactorGui {
                 }
             } else {
                 inventory.setItem(slot, createGuiItem(Material.GRAY_STAINED_GLASS_PANE, 
-                    "§7Click to select an item", "§7Hold the item you want to select", "§7and click this slot"));
+                    "§7Click to select an item", "§7Select a craftable item from your inventory"));
             }
         }
     }
@@ -115,10 +115,43 @@ public class CompactorGui {
     public void handleClick(int slot, ItemStack clickedItem) {
         if (Arrays.stream(SELECTION_SLOTS).anyMatch(s -> s == slot)) {
             handleSelectionSlotClick(slot, clickedItem);
+        } else if (slot == 40) {
+            handleStartClick();
+        } else if (slot == 38) {
+            handleStopClick();
         }
     }
 
-    public void handleStartClick() {
+    private void handleSelectionSlotClick(int slot, ItemStack clickedItem) {
+        if (selectedItems.containsKey(slot)) {
+            // Remove selected item
+            selectedItems.remove(slot);
+            updateDisplay();
+            Map<String, String> placeholders = MessageUtils.placeholders();
+            MessageUtils.sendMessage(player, "compactor.item-removed", placeholders);
+        } else if (clickedItem != null && clickedItem.getType() != Material.AIR) {
+            // Try to select item from player's inventory
+            String itemId = plugin.getCraftingManager().getCustomItemIdFromItemStack(clickedItem);
+            if (itemId != null) {
+                CustomItem customItem = plugin.getCraftingManager().getCustomItem(itemId);
+                if (customItem != null && !customItem.getRecipe().isEmpty()) {
+                    selectedItems.put(slot, itemId);
+                    updateDisplay();
+                    Map<String, String> placeholders = MessageUtils.placeholders();
+                    placeholders.put("item", customItem.getName());
+                    MessageUtils.sendMessage(player, "compactor.item-selected", placeholders);
+                } else {
+                    Map<String, String> placeholders = MessageUtils.placeholders();
+                    MessageUtils.sendMessage(player, "compactor.no-recipe", placeholders);
+                }
+            } else {
+                Map<String, String> placeholders = MessageUtils.placeholders();
+                MessageUtils.sendMessage(player, "compactor.not-custom-item", placeholders);
+            }
+        }
+    }
+
+    private void handleStartClick() {
         if (selectedItems.isEmpty()) {
             Map<String, String> placeholders = MessageUtils.placeholders();
             MessageUtils.sendMessage(player, "compactor.no-items-selected", placeholders);
@@ -140,7 +173,7 @@ public class CompactorGui {
         MessageUtils.sendMessage(player, "compactor.started", placeholders);
     }
 
-    public void handleStopClick() {
+    private void handleStopClick() {
         CompactorSession session = activeSessions.remove(player.getUniqueId());
         if (session != null) {
             session.stop();
@@ -150,38 +183,6 @@ public class CompactorGui {
         } else {
             Map<String, String> placeholders = MessageUtils.placeholders();
             MessageUtils.sendMessage(player, "compactor.not-running", placeholders);
-        }
-    }
-
-    private void handleSelectionSlotClick(int slot, ItemStack clickedItem) {
-        if (selectedItems.containsKey(slot)) {
-            // Remove selected item
-            selectedItems.remove(slot);
-            updateDisplay();
-            Map<String, String> placeholders = MessageUtils.placeholders();
-            MessageUtils.sendMessage(player, "compactor.item-removed", placeholders);
-        } else if (clickedItem != null && clickedItem.getType() != Material.AIR) {
-            // Try to select item from player's hand
-            String itemId = plugin.getCraftingManager().getCustomItemIdFromItemStack(clickedItem);
-            if (itemId != null) {
-                CustomItem customItem = plugin.getCraftingManager().getCustomItem(itemId);
-                if (customItem != null && !customItem.getRecipe().isEmpty()) {
-                    selectedItems.put(slot, itemId);
-                    updateDisplay();
-                    Map<String, String> placeholders = MessageUtils.placeholders();
-                    placeholders.put("item", customItem.getName());
-                    MessageUtils.sendMessage(player, "compactor.item-selected", placeholders);
-                } else {
-                    Map<String, String> placeholders = MessageUtils.placeholders();
-                    MessageUtils.sendMessage(player, "compactor.no-recipe", placeholders);
-                }
-            } else {
-                Map<String, String> placeholders = MessageUtils.placeholders();
-                MessageUtils.sendMessage(player, "compactor.not-custom-item", placeholders);
-            }
-        } else {
-            // No item in hand, show instruction
-            player.sendMessage("§cHold an item in your hand and click to select it!");
         }
     }
 

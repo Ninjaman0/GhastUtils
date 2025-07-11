@@ -48,9 +48,8 @@ public class GuiListener implements Listener {
         // Handle Sell GUI
         if (title.startsWith("Sell Items") || title.equals("§6Sell Items")) {
             SellGui sellGui = activeSellGuis.get(playerId);
-            if (sellGui != null && event.getInventory().equals(sellGui.inventory)) {
+            if (sellGui != null) {
                 handleSellGuiClick(event, player, sellGui);
-                return;
             }
         }
         // Handle Crafting Editor GUI
@@ -58,7 +57,6 @@ public class GuiListener implements Listener {
             CraftingEditorGui editorGui = activeCraftingEditorGuis.get(playerId);
             if (editorGui != null) {
                 handleCraftingEditorGuiClick(event, player, editorGui);
-                return;
             }
         }
         // Handle Crafting View GUI
@@ -66,7 +64,6 @@ public class GuiListener implements Listener {
             CraftingViewGui viewGui = activeCraftingViewGuis.get(playerId);
             if (viewGui != null) {
                 handleCraftingViewGuiClick(event, player, viewGui);
-                return;
             }
         }
         // Handle Compactor GUI
@@ -74,7 +71,6 @@ public class GuiListener implements Listener {
             CompactorGui compactorGui = activeCompactorGuis.get(playerId);
             if (compactorGui != null) {
                 handleCompactorGuiClick(event, player, compactorGui);
-                return;
             }
         }
     }
@@ -210,29 +206,14 @@ public class GuiListener implements Listener {
     private void handleCompactorGuiClick(InventoryClickEvent event, Player player, CompactorGui gui) {
         int slot = event.getRawSlot();
         
-        // Always cancel clicks in the top inventory for compactor
+        // Cancel all clicks in the top inventory except for specific handling
         if (slot < event.getView().getTopInventory().getSize()) {
             event.setCancelled(true);
             
-            // Handle specific button clicks
-            if (slot == 40) { // Start button
-                gui.handleStartClick();
-            } else if (slot == 38) { // Stop button  
-                gui.handleStopClick();
-            } else {
-                // Check if it's a selection slot and handle with the item from player's inventory
-                int[] selectionSlots = {10, 12, 14, 16, 22};
-                for (int selectionSlot : selectionSlots) {
-                    if (slot == selectionSlot) {
-                        // For selection slots, we need to get the item from the player's main hand
-                        ItemStack heldItem = player.getInventory().getItemInMainHand();
-                        gui.handleClick(slot, heldItem);
-                        break;
-                    }
-                }
-            }
+            // Handle the click with the cursor item for selection slots
+            ItemStack cursorItem = event.getCursor();
+            gui.handleClick(slot, cursorItem);
         }
-        // Allow normal inventory interactions in the bottom inventory
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

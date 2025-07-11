@@ -1,6 +1,5 @@
 package com.ninja.ghastutils.crafting;
 
-
 import com.ninja.ghastutils.GhastUtils;
 import com.ninja.ghastutils.config.ConfigType;
 import com.ninja.ghastutils.utils.ItemUtils;
@@ -1109,15 +1108,6 @@ public class CraftingManager {
         }
 
         return null;
-    }
-
-    public String getCustomIngredientIdFromItemStack(ItemStack itemStack) {
-        if (itemStack == null || !itemStack.hasItemMeta()) {
-            return null;
-        }
-
-        // Use the existing private method
-        return this.getCustomIngredientIdFromItemStack(itemStack);
     }
 
     public static class CustomIngredient {
