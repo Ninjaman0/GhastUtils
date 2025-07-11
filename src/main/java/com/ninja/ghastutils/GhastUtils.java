@@ -17,6 +17,7 @@ import com.ninja.ghastutils.listeners.BlockInteractionListener;
 import com.ninja.ghastutils.listeners.GuiListener;
 import com.ninja.ghastutils.listeners.MultiplierListener;
 import com.ninja.ghastutils.listeners.VanillaFeatureListener;
+import com.ninja.ghastutils.listeners.VanillaCraftingListener;
 import com.ninja.ghastutils.multiplier.MultiplierManager;
 import com.ninja.ghastutils.multiplier.api.multiplierProvider;
 import com.ninja.ghastutils.papi.PlaceholderManager;
@@ -53,6 +54,7 @@ public class GhastUtils extends JavaPlugin {
     private BackupManager backupManager;
     private EventBossBar eventBossBar;
     private VanillaFeatureListener vanillaFeatureListener;
+    private VanillaCraftingListener vanillaCraftingListener;
 
     public void onEnable() {
         instance = this;
@@ -73,6 +75,7 @@ public class GhastUtils extends JavaPlugin {
         this.backupManager = new BackupManager(this);
         this.guiListener = new GuiListener(this);
         this.vanillaFeatureListener = new VanillaFeatureListener(this);
+        this.vanillaCraftingListener = new VanillaCraftingListener(this);
         
         this.getServer().getPluginManager().registerEvents(this.guiListener, this);
         this.getServer().getPluginManager().registerEvents(new ArmorPlaceListener(), this);
@@ -81,6 +84,7 @@ public class GhastUtils extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(new MultiplierListener(this), this);
         this.getServer().getPluginManager().registerEvents(new BlockInteractionListener(this), this);
         this.getServer().getPluginManager().registerEvents(this.armorListener, this);
+        this.getServer().getPluginManager().registerEvents(this.vanillaCraftingListener, this);
         this.eventBossBar = this.multiplierManager.getEventBossBar();
         this.setupPlaceholderAPI();
         this.setupRivalPetsIntegration();
