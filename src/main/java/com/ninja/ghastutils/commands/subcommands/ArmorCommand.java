@@ -50,7 +50,7 @@ public class ArmorCommand extends SubCommand {
                 case "list":
                     return this.handleListCommand(sender, args);
                 default:
-                    sender.sendMessage("§cUnknown action: " + action);
+                    sender.sendMessage("§cUnknown action: ");
                     sender.sendMessage("§cUsage: " + this.getUsage());
                     return true;
             }

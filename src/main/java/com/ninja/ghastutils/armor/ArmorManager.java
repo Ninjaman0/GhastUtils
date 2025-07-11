@@ -27,7 +27,7 @@ import org.bukkit.profile.PlayerTextures;
 
 public class ArmorManager {
     private final GhastUtils plugin;
-    private final Map<String, ArmorPieceData> armorPieces = new HashMap();
+    private final Map<String, ArmorPieceData> armorPieces = new HashMap<String, ArmorPieceData>();
     private boolean enabled;
     private boolean particlesEnabled;
     private String particleType;
@@ -48,12 +48,12 @@ public class ArmorManager {
             this.particlesEnabled = particlesSection.getBoolean("enabled", true);
             this.particleType = particlesSection.getString("type", "WITCH");
             this.particleCount = particlesSection.getInt("count", 15);
-            this.particleRadius = particlesSection.getDouble("radius", (double)0.5F);
+            this.particleRadius = particlesSection.getDouble("radius", 0.5);
         } else {
             this.particlesEnabled = true;
             this.particleType = "WITCH";
             this.particleCount = 15;
-            this.particleRadius = (double)0.5F;
+            this.particleRadius = 0.5;
         }
 
         if (this.enabled) {
@@ -77,7 +77,7 @@ public class ArmorManager {
                         String name = pieceSection.getString("name", materialName);
                         List<String> lore = pieceSection.getStringList("lore");
                         double multiplier = pieceSection.getDouble("multiplier", 0.1);
-                        String permission = pieceSection.getString("permission", (String)null);
+                        String permission = pieceSection.getString("permission", null);
                         Integer customModelData = pieceSection.contains("custom-model-data") ? pieceSection.getInt("custom-model-data") : null;
                         String headTexture = pieceSection.getString("head-texture", "");
                         String headOwner = pieceSection.getString("head-owner", "");
@@ -114,7 +114,7 @@ public class ArmorManager {
         if (!this.armorPieces.containsKey(armorId)) {
             return null;
         } else {
-            ArmorPieceData piece = (ArmorPieceData)this.armorPieces.get(armorId);
+            ArmorPieceData piece = this.armorPieces.get(armorId);
             ItemStack item = new ItemStack(piece.getMaterial());
             ItemMeta meta = item.getItemMeta();
             if (meta == null) {
@@ -171,7 +171,7 @@ public class ArmorManager {
     }
 
     public List<ItemStack> createAllArmorItems() {
-        List<ItemStack> items = new ArrayList();
+        List<ItemStack> items = new ArrayList<ItemStack>();
 
         for(String armorId : this.armorPieces.keySet()) {
             ItemStack item = this.createArmorItem(armorId);
@@ -211,8 +211,8 @@ public class ArmorManager {
                 }
 
                 for(Map.Entry<String, ArmorPieceData> entry : this.armorPieces.entrySet()) {
-                    if (this.isMatchingItem(item, (ArmorPieceData)entry.getValue())) {
-                        return (String)entry.getKey();
+                    if (this.isMatchingItem(item, entry.getValue())) {
+                        return entry.getKey();
                     }
                 }
 
@@ -225,12 +225,12 @@ public class ArmorManager {
 
     public ArmorPieceData getArmorPieceData(ItemStack item) {
         String armorId = this.getArmorId(item);
-        return armorId != null ? (ArmorPieceData)this.armorPieces.get(armorId) : null;
+        return armorId != null ? this.armorPieces.get(armorId) : null;
     }
 
     public double getArmorMultiplier(ItemStack item) {
         ArmorPieceData piece = this.getArmorPieceData(item);
-        return piece != null ? piece.multiplier : (double)0.0F;
+        return piece != null ? piece.multiplier : 0.0;
     }
 
     public Map<String, ArmorPieceData> getArmorPieces() {
@@ -265,9 +265,9 @@ public class ArmorManager {
                     return false;
                 }
 
-                List<String> itemLore = (List)MessageUtils.stripColors(meta.getLore()).stream().map(String::toLowerCase).collect(Collectors.toList());
+                List<String> itemLore = MessageUtils.stripColors(meta.getLore()).stream().map(String::toLowerCase).collect(Collectors.toList());
 
-                for(String requiredLine : (List)MessageUtils.stripColors(piece.lore).stream().map(String::toLowerCase).collect(Collectors.toList())) {
+                for(String requiredLine : MessageUtils.stripColors(piece.lore).stream().map(String::toLowerCase).collect(Collectors.toList())) {
                     boolean found = itemLore.stream().anyMatch((itemLine) -> itemLine.contains(requiredLine));
                     if (!found) {
                         return false;
@@ -323,7 +323,7 @@ public class ArmorManager {
         public ArmorPieceData(Material material, String name, List<String> lore, double multiplier, String permission, Integer customModelData, Color color, String headTexture, String headOwner) {
             this.material = material;
             this.name = name;
-            this.lore = (List<String>)(lore != null ? lore : new ArrayList());
+            this.lore = lore != null ? lore : new ArrayList<String>();
             this.multiplier = multiplier;
             this.permission = permission;
             this.customModelData = customModelData;

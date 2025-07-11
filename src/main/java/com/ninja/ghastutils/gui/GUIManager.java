@@ -1,4 +1,3 @@
-
 package com.ninja.ghastutils.gui;
 
 import com.ninja.ghastutils.GhastUtils;
@@ -38,13 +37,13 @@ public class GUIManager implements Listener {
 
     public GUIManager(GhastUtils plugin) {
         this.plugin = plugin;
-        this.activeSessions = new ConcurrentHashMap();
-        this.lastInteraction = new ConcurrentHashMap();
-        this.processingInventory = Collections.synchronizedSet(new HashSet());
-        this.sellGuis = new ConcurrentHashMap();
-        this.craftingEditorGuis = new ConcurrentHashMap();
-        this.craftingViewGuis = new ConcurrentHashMap();
-        this.compactorGuis = new ConcurrentHashMap();
+        this.activeSessions = new ConcurrentHashMap<UUID, GUISession>();
+        this.lastInteraction = new ConcurrentHashMap<UUID, Long>();
+        this.processingInventory = Collections.synchronizedSet(new HashSet<UUID>());
+        this.sellGuis = new ConcurrentHashMap<UUID, SellGui>();
+        this.craftingEditorGuis = new ConcurrentHashMap<UUID, CraftingEditorGui>();
+        this.craftingViewGuis = new ConcurrentHashMap<UUID, CraftingViewGui>();
+        this.compactorGuis = new ConcurrentHashMap<UUID, CompactorGui>();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         this.startCleanupTask();
     }
@@ -61,7 +60,7 @@ public class GUIManager implements Listener {
             } else {
                 try {
                     if (this.sellGuis.containsKey(playerId)) {
-                        SellGui sellGui = (SellGui)this.sellGuis.get(playerId);
+                        SellGui sellGui = this.sellGuis.get(playerId);
                         if (event.getInventory().equals(sellGui.inventory)) {
                             sellGui.handleClick(event);
                             return;
@@ -69,9 +68,9 @@ public class GUIManager implements Listener {
                     }
 
                     if (this.craftingEditorGuis.containsKey(playerId)) {
-                        CraftingEditorGui editorGui = (CraftingEditorGui)this.craftingEditorGuis.get(playerId);
+                        CraftingEditorGui editorGui = this.craftingEditorGuis.get(playerId);
                     } else if (this.craftingViewGuis.containsKey(playerId)) {
-                        CraftingViewGui viewGui = (CraftingViewGui)this.craftingViewGuis.get(playerId);
+                        CraftingViewGui viewGui = this.craftingViewGuis.get(playerId);
                     } else {
                         GUISession session = this.getSession(player);
                         if (session != null) {
@@ -102,11 +101,11 @@ public class GUIManager implements Listener {
             } else {
                 try {
                     if (this.sellGuis.containsKey(playerId)) {
-                        SellGui sellGui = (SellGui)this.sellGuis.get(playerId);
+                        SellGui sellGui = this.sellGuis.get(playerId);
                         if (event.getInventory().equals(sellGui.inventory)) {
-                            boolean affectsTopInventory = event.getRawSlots().stream().anyMatch((slotx) -> slotx < event.getView().getTopInventory().getSize());
+                            boolean affectsTopInventory = event.getRawSlots().stream().anyMatch((slot) -> slot < event.getView().getTopInventory().getSize());
                             if (affectsTopInventory) {
-                                Stream var10000 = event.getRawSlots().stream().filter((slotx) -> slotx < event.getView().getTopInventory().getSize());
+                                Stream<Integer> var10000 = event.getRawSlots().stream().filter((slot) -> slot < event.getView().getTopInventory().getSize());
                                 Objects.requireNonNull(sellGui);
                                 boolean allowDrag = var10000.allMatch(sellGui::isInSellSlot);
                                 if (!allowDrag) {
@@ -154,9 +153,9 @@ public class GUIManager implements Listener {
             Iterator<Map.Entry<UUID, GUISession>> it = this.activeSessions.entrySet().iterator();
 
             while(it.hasNext()) {
-                Map.Entry<UUID, GUISession> entry = (Map.Entry)it.next();
-                UUID playerId = (UUID)entry.getKey();
-                if (now - (Long)this.lastInteraction.getOrDefault(playerId, 0L) > this.sessionTimeout) {
+                Map.Entry<UUID, GUISession> entry = it.next();
+                UUID playerId = entry.getKey();
+                if (now - this.lastInteraction.getOrDefault(playerId, 0L) > this.sessionTimeout) {
                     Player player = Bukkit.getPlayer(playerId);
                     if (player != null && player.isOnline()) {
                         player.closeInventory();
@@ -182,7 +181,7 @@ public class GUIManager implements Listener {
 
     public void registerSession(Player player, GUISession session) {
         UUID playerId = player.getUniqueId();
-        GUISession existingSession = (GUISession)this.activeSessions.get(playerId);
+        GUISession existingSession = this.activeSessions.get(playerId);
         if (existingSession != null) {
             LogManager.debug("Player " + player.getName() + " already has a GUI session, closing it");
             player.closeInventory();
@@ -211,15 +210,15 @@ public class GUIManager implements Listener {
     }
 
     public SellGui getSellGui(UUID playerId) {
-        return (SellGui)this.sellGuis.get(playerId);
+        return this.sellGuis.get(playerId);
     }
 
     public CraftingEditorGui getCraftingEditorGui(UUID playerId) {
-        return (CraftingEditorGui)this.craftingEditorGuis.get(playerId);
+        return this.craftingEditorGuis.get(playerId);
     }
 
     public CraftingViewGui getCraftingViewGui(UUID playerId) {
-        return (CraftingViewGui)this.craftingViewGuis.get(playerId);
+        return this.craftingViewGuis.get(playerId);
     }
 
     public CompactorGui getCompactorGui(UUID playerId) {
@@ -227,7 +226,7 @@ public class GUIManager implements Listener {
     }
 
     public GUISession getSession(Player player) {
-        return (GUISession)this.activeSessions.get(player.getUniqueId());
+        return this.activeSessions.get(player.getUniqueId());
     }
 
     public void removeSession(Player player) {
@@ -253,7 +252,7 @@ public class GUIManager implements Listener {
             Player player = (Player)event.getPlayer();
             UUID playerId = player.getUniqueId();
             if (this.sellGuis.containsKey(playerId)) {
-                SellGui sellGui = (SellGui)this.sellGuis.get(playerId);
+                SellGui sellGui = this.sellGuis.get(playerId);
                 if (event.getInventory().equals(sellGui.inventory)) {
                     sellGui.onClose();
                     this.sellGuis.remove(playerId);
@@ -261,7 +260,7 @@ public class GUIManager implements Listener {
             }
 
             if (this.craftingEditorGuis.containsKey(playerId)) {
-                CraftingEditorGui editorGui = (CraftingEditorGui)this.craftingEditorGuis.get(playerId);
+                CraftingEditorGui editorGui = this.craftingEditorGuis.get(playerId);
                 this.craftingEditorGuis.remove(playerId);
             }
 

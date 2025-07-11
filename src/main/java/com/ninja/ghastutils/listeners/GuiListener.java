@@ -1,4 +1,3 @@
-
 package com.ninja.ghastutils.listeners;
 
 import com.ninja.ghastutils.GhastUtils;
@@ -24,9 +23,9 @@ import org.bukkit.scheduler.BukkitScheduler;
 
 public class GuiListener implements Listener {
     private final GhastUtils plugin;
-    private final Map<UUID, SellGui> activeSellGuis = new HashMap();
-    private final Map<UUID, CraftingEditorGui> activeCraftingEditorGuis = new HashMap();
-    private final Map<UUID, CraftingViewGui> activeCraftingViewGuis = new HashMap();
+    private final Map<UUID, SellGui> activeSellGuis = new HashMap<UUID, SellGui>();
+    private final Map<UUID, CraftingEditorGui> activeCraftingEditorGuis = new HashMap<UUID, CraftingEditorGui>();
+    private final Map<UUID, CraftingViewGui> activeCraftingViewGuis = new HashMap<UUID, CraftingViewGui>();
 
     public GuiListener(GhastUtils plugin) {
         this.plugin = plugin;
@@ -45,14 +44,14 @@ public class GuiListener implements Listener {
             int slot = event.getRawSlot();
             if (!title.startsWith("Sell Items") && !title.equals("§6Sell Items")) {
                 if (title.startsWith("Recipe Editor:")) {
-                    CraftingEditorGui editorGui = (CraftingEditorGui)this.activeCraftingEditorGuis.get(playerId);
+                    CraftingEditorGui editorGui = this.activeCraftingEditorGuis.get(playerId);
                     if (editorGui != null) {
                         this.handleCraftingEditorGuiClick(event, player, editorGui);
                     }
 
                 } else {
                     if (title.startsWith("Recipe:")) {
-                        CraftingViewGui viewGui = (CraftingViewGui)this.activeCraftingViewGuis.get(playerId);
+                        CraftingViewGui viewGui = this.activeCraftingViewGuis.get(playerId);
                         if (viewGui != null) {
                             this.handleCraftingViewGuiClick(event, player, viewGui);
                         }
@@ -60,7 +59,7 @@ public class GuiListener implements Listener {
 
                 }
             } else {
-                SellGui sellGui = (SellGui)this.activeSellGuis.get(playerId);
+                SellGui sellGui = this.activeSellGuis.get(playerId);
                 if (sellGui != null) {
                     this.handleSellGuiClick(event, player, sellGui);
                 }
@@ -83,11 +82,11 @@ public class GuiListener implements Listener {
             if (affectsTopInventory) {
                 if (!title.startsWith("Sell Items") && !title.equals("§6Sell Items")) {
                     if (title.startsWith("Recipe Editor:")) {
-                        CraftingEditorGui gui = (CraftingEditorGui)this.activeCraftingEditorGuis.get(playerId);
+                        CraftingEditorGui gui = this.activeCraftingEditorGuis.get(playerId);
                         if (gui != null) {
-                            Stream var12 = event.getRawSlots().stream().filter((slot) -> slot < topInventorySize);
+                            Stream<Integer> filteredSlots = event.getRawSlots().stream().filter((slot) -> slot < topInventorySize);
                             Objects.requireNonNull(gui);
-                            boolean allowDrag = var12.allMatch(gui::isRecipeSlot);
+                            boolean allowDrag = filteredSlots.allMatch(gui::isRecipeSlot);
                             if (!allowDrag) {
                                 event.setCancelled(true);
                             }
@@ -98,18 +97,18 @@ public class GuiListener implements Listener {
                         event.setCancelled(true);
                     }
                 } else {
-                    SellGui gui = (SellGui)this.activeSellGuis.get(playerId);
+                    SellGui gui = this.activeSellGuis.get(playerId);
                     if (gui != null) {
-                        Stream var10000 = event.getRawSlots().stream().filter((slot) -> slot < topInventorySize);
+                        Stream<Integer> filteredSlots = event.getRawSlots().stream().filter((slot) -> slot < topInventorySize);
                         Objects.requireNonNull(gui);
-                        boolean allowDrag = var10000.allMatch(gui::isInSellSlot);
+                        boolean allowDrag = filteredSlots.allMatch(gui::isInSellSlot);
                         if (!allowDrag) {
                             event.setCancelled(true);
                         } else {
-                            BukkitScheduler var11 = this.plugin.getServer().getScheduler();
-                            GhastUtils var10001 = this.plugin;
+                            BukkitScheduler scheduler = this.plugin.getServer().getScheduler();
+                            GhastUtils pluginRef = this.plugin;
                             Objects.requireNonNull(gui);
-                            var11.runTask(var10001, gui::calculateTotalValue);
+                            scheduler.runTask(pluginRef, gui::calculateTotalValue);
                         }
                     } else {
                         event.setCancelled(true);
@@ -132,10 +131,10 @@ public class GuiListener implements Listener {
                     gui.handleCancelClick();
                 }
             } else {
-                BukkitScheduler var10000 = this.plugin.getServer().getScheduler();
-                GhastUtils var10001 = this.plugin;
+                BukkitScheduler scheduler = this.plugin.getServer().getScheduler();
+                GhastUtils pluginRef = this.plugin;
                 Objects.requireNonNull(gui);
-                var10000.runTask(var10001, gui::calculateTotalValue);
+                scheduler.runTask(pluginRef, gui::calculateTotalValue);
             }
         } else if (event.isShiftClick()) {
             ItemStack clickedItem = event.getCurrentItem();
@@ -153,10 +152,10 @@ public class GuiListener implements Listener {
                 if (firstAvailableSellSlot == -1) {
                     event.setCancelled(true);
                 } else {
-                    BukkitScheduler var13 = this.plugin.getServer().getScheduler();
-                    GhastUtils var14 = this.plugin;
+                    BukkitScheduler scheduler = this.plugin.getServer().getScheduler();
+                    GhastUtils pluginRef = this.plugin;
                     Objects.requireNonNull(gui);
-                    var13.runTask(var14, gui::calculateTotalValue);
+                    scheduler.runTask(pluginRef, gui::calculateTotalValue);
                 }
             }
         }
@@ -212,7 +211,7 @@ public class GuiListener implements Listener {
             String title = event.getView().getTitle();
             if (!title.startsWith("Sell Items") && !title.equals("§6Sell Items")) {
                 if (title.startsWith("Recipe Editor:")) {
-                    CraftingEditorGui gui = (CraftingEditorGui)this.activeCraftingEditorGuis.get(playerId);
+                    CraftingEditorGui gui = this.activeCraftingEditorGuis.get(playerId);
                     if (gui != null) {
                         gui.onClose();
                         this.activeCraftingEditorGuis.remove(playerId);
@@ -221,7 +220,7 @@ public class GuiListener implements Listener {
                     this.activeCraftingViewGuis.remove(playerId);
                 }
             } else {
-                SellGui gui = (SellGui)this.activeSellGuis.get(playerId);
+                SellGui gui = this.activeSellGuis.get(playerId);
                 if (gui != null) {
                     gui.onClose();
                     this.activeSellGuis.remove(playerId);
@@ -244,14 +243,14 @@ public class GuiListener implements Listener {
     }
 
     public SellGui getSellGui(UUID uuid) {
-        return (SellGui)this.activeSellGuis.get(uuid);
+        return this.activeSellGuis.get(uuid);
     }
 
     public CraftingEditorGui getCraftingEditorGui(UUID uuid) {
-        return (CraftingEditorGui)this.activeCraftingEditorGuis.get(uuid);
+        return this.activeCraftingEditorGuis.get(uuid);
     }
 
     public CraftingViewGui getCraftingViewGui(UUID uuid) {
-        return (CraftingViewGui)this.activeCraftingViewGuis.get(uuid);
+        return this.activeCraftingViewGuis.get(uuid);
     }
 }

@@ -68,7 +68,7 @@ public class PetCommand extends SubCommand {
                         target.sendMessage("§cYour pet boost has been deactivated");
                         break;
                     default:
-                        sender.sendMessage("§cUnknown action: " + action);
+                        sender.sendMessage("§cUnknown action: ");
                         sender.sendMessage("§cUsage: " + this.getUsage());
                 }
 

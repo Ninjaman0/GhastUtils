@@ -1,4 +1,3 @@
-
 package com.ninja.ghastutils.events;
 
 import com.ninja.ghastutils.GhastUtils;
@@ -21,8 +20,8 @@ import org.bukkit.scheduler.BukkitTask;
 
 public class EventBossBar implements Listener {
     private final GhastUtils plugin;
-    private final Map<String, BossBar> eventBossBars = new ConcurrentHashMap();
-    private final Map<UUID, Map<String, Boolean>> playerVisibility = new ConcurrentHashMap();
+    private final Map<String, BossBar> eventBossBars = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<String, Boolean>> playerVisibility = new ConcurrentHashMap<>();
     private BukkitTask updateTask;
 
     public EventBossBar(GhastUtils plugin) {
@@ -43,9 +42,9 @@ public class EventBossBar implements Listener {
         MultiplierManager multiplierManager = this.plugin.getMultiplierManager();
         Map<String, MultiplierManager.EventMultiplier> events = multiplierManager.getEventMultipliers();
 
-        for(String eventId : (new HashMap(this.eventBossBars)).keySet()) {
+        for(String eventId : new HashMap<>(this.eventBossBars).keySet()) {
             if (!events.containsKey(eventId)) {
-                BossBar bossBar = (BossBar)this.eventBossBars.remove(eventId);
+                BossBar bossBar = this.eventBossBars.remove(eventId);
                 if (bossBar != null) {
                     bossBar.removeAll();
                 }
@@ -53,9 +52,9 @@ public class EventBossBar implements Listener {
         }
 
         for(Map.Entry<String, MultiplierManager.EventMultiplier> entry : events.entrySet()) {
-            String eventId = (String)entry.getKey();
-            MultiplierManager.EventMultiplier event = (MultiplierManager.EventMultiplier)entry.getValue();
-            BossBar bossBar = (BossBar)this.eventBossBars.computeIfAbsent(eventId, (id) -> this.createBossBar(event));
+            String eventId = entry.getKey();
+            MultiplierManager.EventMultiplier event = entry.getValue();
+            BossBar bossBar = this.eventBossBars.computeIfAbsent(eventId, (id) -> this.createBossBar(event));
             String title = this.getEventTitle(event);
             bossBar.setTitle(title);
             if (event.getEndTime() > 0L) {
@@ -63,12 +62,12 @@ public class EventBossBar implements Listener {
                 long duration = this.getEventDuration(event);
                 if (duration > 0L && remaining > 0L) {
                     double progress = (double)remaining / (double)duration;
-                    bossBar.setProgress(Math.max((double)0.0F, Math.min((double)1.0F, progress)));
+                    bossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
                 } else {
-                    bossBar.setProgress((double)0.0F);
+                    bossBar.setProgress(0.0);
                 }
             } else {
-                bossBar.setProgress((double)1.0F);
+                bossBar.setProgress(1.0);
             }
 
             for(Player player : Bukkit.getOnlinePlayers()) {
@@ -77,7 +76,6 @@ public class EventBossBar implements Listener {
                 }
             }
         }
-
     }
 
     private BossBar createBossBar(MultiplierManager.EventMultiplier event) {
@@ -94,14 +92,14 @@ public class EventBossBar implements Listener {
 
     private BarColor getBarColor(MultiplierManager.EventMultiplier event) {
         double value = event.getValue();
-        if (value >= (double)2.0F) {
+        if (value >= 2.0) {
             return BarColor.PURPLE;
-        } else if (value >= (double)1.5F) {
+        } else if (value >= 1.5) {
             return BarColor.RED;
-        } else if (value >= (double)1.0F) {
+        } else if (value >= 1.0) {
             return BarColor.YELLOW;
         } else {
-            return value >= (double)0.5F ? BarColor.GREEN : BarColor.BLUE;
+            return value >= 0.5 ? BarColor.GREEN : BarColor.BLUE;
         }
     }
 
@@ -125,15 +123,15 @@ public class EventBossBar implements Listener {
     }
 
     private boolean shouldSeeEventBossBar(Player player, String eventId) {
-        Map<String, Boolean> visibility = (Map)this.playerVisibility.computeIfAbsent(player.getUniqueId(), (k) -> new ConcurrentHashMap());
-        return (Boolean)visibility.getOrDefault(eventId, true);
+        Map<String, Boolean> visibility = this.playerVisibility.computeIfAbsent(player.getUniqueId(), (k) -> new ConcurrentHashMap<>());
+        return visibility.getOrDefault(eventId, true);
     }
 
     public void setEventBossBarVisible(Player player, String eventId, boolean visible) {
         UUID uuid = player.getUniqueId();
-        Map<String, Boolean> visibility = (Map)this.playerVisibility.computeIfAbsent(uuid, (k) -> new ConcurrentHashMap());
+        Map<String, Boolean> visibility = this.playerVisibility.computeIfAbsent(uuid, (k) -> new ConcurrentHashMap<>());
         visibility.put(eventId, visible);
-        BossBar bossBar = (BossBar)this.eventBossBars.get(eventId);
+        BossBar bossBar = this.eventBossBars.get(eventId);
         if (bossBar != null) {
             if (visible) {
                 bossBar.addPlayer(player);
@@ -141,16 +139,15 @@ public class EventBossBar implements Listener {
                 bossBar.removePlayer(player);
             }
         }
-
     }
 
     public void setAllEventBossBarsVisible(Player player, boolean visible) {
         UUID uuid = player.getUniqueId();
-        Map<String, Boolean> visibility = (Map)this.playerVisibility.computeIfAbsent(uuid, (k) -> new ConcurrentHashMap());
+        Map<String, Boolean> visibility = this.playerVisibility.computeIfAbsent(uuid, (k) -> new ConcurrentHashMap<>());
 
         for(String eventId : this.eventBossBars.keySet()) {
             visibility.put(eventId, visible);
-            BossBar bossBar = (BossBar)this.eventBossBars.get(eventId);
+            BossBar bossBar = this.eventBossBars.get(eventId);
             if (bossBar != null) {
                 if (visible) {
                     bossBar.addPlayer(player);
@@ -159,7 +156,6 @@ public class EventBossBar implements Listener {
                 }
             }
         }
-
     }
 
     @EventHandler
@@ -167,13 +163,12 @@ public class EventBossBar implements Listener {
         Player player = event.getPlayer();
 
         for(Map.Entry<String, BossBar> entry : this.eventBossBars.entrySet()) {
-            String eventId = (String)entry.getKey();
-            BossBar bossBar = (BossBar)entry.getValue();
+            String eventId = entry.getKey();
+            BossBar bossBar = entry.getValue();
             if (this.shouldSeeEventBossBar(player, eventId)) {
                 bossBar.addPlayer(player);
             }
         }
-
     }
 
     @EventHandler
@@ -183,7 +178,6 @@ public class EventBossBar implements Listener {
         for(BossBar bossBar : this.eventBossBars.values()) {
             bossBar.removePlayer(player);
         }
-
     }
 
     public void disable() {

@@ -150,7 +150,7 @@ public class EventMultiplierCommand extends SubCommand {
                     }
                     break;
                 default:
-                    sender.sendMessage("§cUnknown action: " + action);
+                    sender.sendMessage("§cUnknown action: ");
                     sender.sendMessage("§cUsage: " + this.getUsage());
             }
 

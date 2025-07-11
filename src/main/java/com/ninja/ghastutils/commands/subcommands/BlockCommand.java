@@ -1,4 +1,3 @@
-
 package com.ninja.ghastutils.commands.subcommands;
 
 import com.ninja.ghastutils.GhastUtils;
@@ -64,7 +63,7 @@ public class BlockCommand extends SubCommand {
                             return true;
                         }
 
-                        Map<Integer, ItemStack> leftover = player.getInventory().addItem(new ItemStack[]{blockItem});
+                        Map<Integer, ItemStack> leftover = player.getInventory().addItem(blockItem);
                         if (leftover.isEmpty()) {
                             player.sendMessage("§aGave " + blockId + " to you");
                         } else {
@@ -87,7 +86,7 @@ public class BlockCommand extends SubCommand {
                             return true;
                         }
 
-                        Block targetBlock = player.getTargetBlock((Set)null, 5);
+                        Block targetBlock = player.getTargetBlock((Set<Material>)null, 5);
                         if (targetBlock == null || targetBlock.getType() == Material.AIR) {
                             player.sendMessage("§cYou need to look at a block to set it as a custom block");
                             return true;
@@ -95,14 +94,14 @@ public class BlockCommand extends SubCommand {
 
                         boolean success = blockManager.placeCustomBlock(targetBlock.getLocation(), setBlockId);
                         if (success) {
-                            String var33 = this.formatLocation(targetBlock.getLocation());
-                            player.sendMessage("§aSet block at " + var33 + " to " + setBlockId);
+                            String locationStr = this.formatLocation(targetBlock.getLocation());
+                            player.sendMessage("§aSet block at " + locationStr + " to " + setBlockId);
                         } else {
                             player.sendMessage("§cFailed to set custom block");
                         }
                         break;
                     case "remove":
-                        Block targetRemoveBlock = player.getTargetBlock((Set)null, 5);
+                        Block targetRemoveBlock = player.getTargetBlock((Set<Material>)null, 5);
                         if (targetRemoveBlock == null || targetRemoveBlock.getType() == Material.AIR) {
                             player.sendMessage("§cYou need to look at a block to remove it");
                             return true;
@@ -121,7 +120,7 @@ public class BlockCommand extends SubCommand {
                         }
                         break;
                     case "info":
-                        Block targetInfoBlock = player.getTargetBlock((Set)null, 5);
+                        Block targetInfoBlock = player.getTargetBlock((Set<Material>)null, 5);
                         if (targetInfoBlock == null || targetInfoBlock.getType() == Material.AIR) {
                             player.sendMessage("§cYou need to look at a block to get information about it");
                             return true;
@@ -139,17 +138,17 @@ public class BlockCommand extends SubCommand {
                             player.sendMessage("§eID: §f" + infoBlockId);
                             player.sendMessage("§eType: §f" + infoBlock.getMaterial().toString());
                             player.sendMessage("§eName: §f" + infoBlock.getName());
-                            String var31 = this.formatLocation(targetInfoBlock.getLocation());
-                            player.sendMessage("§eLocation: §f" + var31);
-                            var31 = infoBlock.getPermission() != null ? infoBlock.getPermission() : "None";
-                            player.sendMessage("§ePermission: §f" + var31);
+                            String locationStr = this.formatLocation(targetInfoBlock.getLocation());
+                            player.sendMessage("§eLocation: §f" + locationStr);
+                            String permissionStr = infoBlock.getPermission() != null ? infoBlock.getPermission() : "None";
+                            player.sendMessage("§ePermission: §f" + permissionStr);
                             if (!infoBlock.getCommands().isEmpty()) {
                                 player.sendMessage("§eCommands:");
 
                                 for(Map.Entry<String, List<String>> entry : infoBlock.getCommands().entrySet()) {
-                                    player.sendMessage("§f  " + (String)entry.getKey() + ":");
+                                    player.sendMessage("§f  " + entry.getKey() + ":");
 
-                                    for(String cmd : (List)entry.getValue()) {
+                                    for(String cmd : entry.getValue()) {
                                         player.sendMessage("§f    - " + cmd);
                                     }
                                 }
@@ -168,10 +167,10 @@ public class BlockCommand extends SubCommand {
                         player.sendMessage("§6§l=== Custom Blocks ===");
 
                         for(Map.Entry<String, CustomBlock> entry : customBlocks.entrySet()) {
-                            CustomBlock block = (CustomBlock)entry.getValue();
+                            CustomBlock block = entry.getValue();
                             String permissionInfo = block.getPermission() != null ? " §7(Permission: " + block.getPermission() + ")" : "";
-                            String var10001 = (String)entry.getKey();
-                            player.sendMessage("§e" + var10001 + " §7- §f" + block.getName() + " §7- §f" + block.getMaterial().toString() + permissionInfo);
+                            String blockIdStr = entry.getKey();
+                            player.sendMessage("§e" + blockIdStr + " §7- §f" + block.getName() + " §7- §f" + block.getMaterial().toString() + permissionInfo);
                         }
                         break;
                     default:
@@ -187,24 +186,26 @@ public class BlockCommand extends SubCommand {
     }
 
     private String formatLocation(Location location) {
-        String var10000 = location.getWorld().getName();
-        return var10000 + " [" + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ() + "]";
+        String worldName = location.getWorld().getName();
+        return worldName + " [" + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ() + "]";
     }
 
     public List<String> tabComplete(CommandSender sender, String[] args) {
         if (!this.checkPermission(sender)) {
-            return new ArrayList();
+            return new ArrayList<>();
         } else if (args.length == 1) {
             return this.filterStartsWith(Arrays.asList("get", "set", "remove", "info", "list"), args[0]);
         } else {
-            return (List<String>)(args.length != 2 || !args[0].equalsIgnoreCase("get") && !args[0].equalsIgnoreCase("set") ? new ArrayList() : this.filterStartsWith(new ArrayList(this.plugin.getBlockManager().getCustomBlocks().keySet()), args[1]));
+            return args.length != 2 || (!args[0].equalsIgnoreCase("get") && !args[0].equalsIgnoreCase("set")) ?
+                    new ArrayList<>() :
+                    this.filterStartsWith(new ArrayList<>(this.plugin.getBlockManager().getCustomBlocks().keySet()), args[1]);
         }
     }
 
     private List<String> filterStartsWith(List<String> list, String prefix) {
         if (prefix != null && !prefix.isEmpty()) {
             String lowercasePrefix = prefix.toLowerCase();
-            return (List)list.stream().filter((s) -> s.toLowerCase().startsWith(lowercasePrefix)).collect(Collectors.toList());
+            return list.stream().filter(s -> s.toLowerCase().startsWith(lowercasePrefix)).collect(Collectors.toList());
         } else {
             return list;
         }

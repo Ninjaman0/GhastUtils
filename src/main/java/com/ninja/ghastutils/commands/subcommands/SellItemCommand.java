@@ -95,7 +95,7 @@ public class SellItemCommand extends SubCommand {
                         }
                         break;
                     default:
-                        player.sendMessage("§cUnknown action: " + action);
+                        player.sendMessage("§cUnknown action: ");
                         player.sendMessage("§cUsage: " + this.getUsage());
                 }
 

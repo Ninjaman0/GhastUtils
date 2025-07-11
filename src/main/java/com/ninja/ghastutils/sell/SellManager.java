@@ -1,4 +1,3 @@
-
 package com.ninja.ghastutils.sell;
 
 import com.ninja.ghastutils.GhastUtils;
@@ -25,8 +24,8 @@ public class SellManager {
 
     public SellManager(GhastUtils plugin) {
         this.plugin = plugin;
-        this.sellableItems = new ConcurrentHashMap();
-        this.activeSellSessions = new ConcurrentHashMap();
+        this.sellableItems = new ConcurrentHashMap<String, SellableItem>();
+        this.activeSellSessions = new ConcurrentHashMap<Player, SellSession>();
         this.loadSellableItems();
     }
 
@@ -42,9 +41,9 @@ public class SellManager {
                     if (itemSection != null) {
                         String itemName = itemSection.getString("itemname", "");
                         Material material = Material.valueOf(itemSection.getString("material", "STONE").toUpperCase());
-                        double basePrice = itemSection.getDouble("base_price", (double)0.0F);
-                        String permission = itemSection.getString("permission", (String)null);
-                        List<String> lore = new ArrayList();
+                        double basePrice = itemSection.getDouble("base_price", 0.0);
+                        String permission = itemSection.getString("permission", null);
+                        List<String> lore = new ArrayList<String>();
                         if (itemSection.contains("lore")) {
                             lore = itemSection.getStringList("lore");
                         }
@@ -62,7 +61,7 @@ public class SellManager {
                         if (itemSection.contains("nbt_data")) {
                             ConfigurationSection nbtSection = itemSection.getConfigurationSection("nbt_data");
                             if (nbtSection != null) {
-                                Map<String, String> nbtData = new HashMap();
+                                Map<String, String> nbtData = new HashMap<String, String>();
 
                                 for(String key : nbtSection.getKeys(false)) {
                                     nbtData.put(key, nbtSection.getString(key));
@@ -85,11 +84,11 @@ public class SellManager {
 
     public void saveItems() {
         FileConfiguration sellConfig = this.plugin.getConfigManager().getConfig(ConfigType.SELL);
-        sellConfig.set("items", (Object)null);
+        sellConfig.set("items", null);
 
         for(Map.Entry<String, SellableItem> entry : this.sellableItems.entrySet()) {
-            String itemId = (String)entry.getKey();
-            SellableItem item = (SellableItem)entry.getValue();
+            String itemId = entry.getKey();
+            SellableItem item = entry.getValue();
             String path = "items." + itemId;
             sellConfig.set(path + ".itemname", item.getName());
             sellConfig.set(path + ".material", item.getMaterial().toString());
@@ -108,7 +107,7 @@ public class SellManager {
 
             if (item.hasNbtData()) {
                 for(Map.Entry<String, String> nbtEntry : item.getNbtData().entrySet()) {
-                    sellConfig.set(path + ".nbt_data." + (String)nbtEntry.getKey(), nbtEntry.getValue());
+                    sellConfig.set(path + ".nbt_data." + nbtEntry.getKey(), nbtEntry.getValue());
                 }
             }
         }
@@ -119,7 +118,7 @@ public class SellManager {
     public void registerItem(String itemId, ItemStack item, double basePrice) {
         if (item != null && item.hasItemMeta()) {
             String itemName = item.getItemMeta().hasDisplayName() ? item.getItemMeta().getDisplayName() : item.getType().toString();
-            List<String> lore = (List<String>)(item.getItemMeta().hasLore() ? item.getItemMeta().getLore() : new ArrayList());
+            List<String> lore = item.getItemMeta().hasLore() ? item.getItemMeta().getLore() : new ArrayList<String>();
             int customModelData = item.getItemMeta().hasCustomModelData() ? item.getItemMeta().getCustomModelData() : -1;
             SellableItem sellableItem = new SellableItem(itemId, itemName, item.getType(), basePrice, lore, customModelData);
             this.sellableItems.put(itemId, sellableItem);
@@ -130,26 +129,26 @@ public class SellManager {
     }
 
     public SellResult sellItems(Player player, List<ItemStack> items) {
-        double totalPrice = (double)0.0F;
+        double totalPrice = 0.0;
         int itemsSold = 0;
-        Map<String, Integer> soldItems = new HashMap();
+        Map<String, Integer> soldItems = new HashMap<String, Integer>();
         double multiplier = this.plugin.getMultiplierManager().getTotalMultiplier(player.getUniqueId());
 
-        for(ItemStack item : new ArrayList(items)) {
+        for(ItemStack item : new ArrayList<ItemStack>(items)) {
             if (item != null && !item.getType().isAir()) {
                 SellableItem sellableItem = this.findMatchingSellableItem(item);
                 if (sellableItem != null && (sellableItem.getPermission() == null || sellableItem.getPermission().isEmpty() || player.hasPermission(sellableItem.getPermission()))) {
                     double price = sellableItem.getBasePrice() * multiplier * (double)item.getAmount();
                     totalPrice += price;
                     String itemId = sellableItem.getId();
-                    soldItems.put(itemId, (Integer)soldItems.getOrDefault(itemId, 0) + item.getAmount());
+                    soldItems.put(itemId, soldItems.getOrDefault(itemId, 0) + item.getAmount());
                     item.setAmount(0);
                     ++itemsSold;
                 }
             }
         }
 
-        if (totalPrice > (double)0.0F) {
+        if (totalPrice > 0.0) {
             if (EconomyUtil.isInitialized()) {
                 EconomyUtil.deposit(player, totalPrice, "sell");
                 LogManager.transaction("SELL", player.getName(), totalPrice, "SellGUI", "SUCCESS");
@@ -184,19 +183,19 @@ public class SellManager {
 
     public double getItemSellPrice(ItemStack item) {
         if (item == null) {
-            return (double)0.0F;
+            return 0.0;
         } else {
             SellableItem sellableItem = this.findMatchingSellableItem(item);
-            return sellableItem != null ? sellableItem.getBasePrice() : (double)0.0F;
+            return sellableItem != null ? sellableItem.getBasePrice() : 0.0;
         }
     }
 
     public Map<String, SellableItem> getSellableItems() {
-        return new HashMap(this.sellableItems);
+        return new HashMap<String, SellableItem>(this.sellableItems);
     }
 
     public SellableItem getSellableItem(String id) {
-        return (SellableItem)this.sellableItems.get(id);
+        return this.sellableItems.get(id);
     }
 
     public void removeSellableItem(String id) {
@@ -210,7 +209,7 @@ public class SellManager {
     }
 
     public SellSession getSellSession(Player player) {
-        return (SellSession)this.activeSellSessions.get(player);
+        return this.activeSellSessions.get(player);
     }
 
     public void endSellSession(Player player) {
@@ -218,12 +217,12 @@ public class SellManager {
     }
 
     public double getSellPrice(String itemId, Player player) {
-        SellableItem item = (SellableItem)this.sellableItems.get(itemId);
+        SellableItem item = this.sellableItems.get(itemId);
         if (item != null) {
             double multiplier = this.plugin.getMultiplierManager().getTotalMultiplier(player.getUniqueId());
             return item.getBasePrice() * multiplier;
         } else {
-            return (double)0.0F;
+            return 0.0;
         }
     }
 
